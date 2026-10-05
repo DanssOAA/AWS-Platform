@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { invokeAccessFunction, listAccessRequests, type AccessRequest, type AccessStatus } from '../../lib/accessRequests';
 import { errorMessage } from '../../lib/supabase';
+import { userMessage } from '../../lib/uiMessages';
 
 const statuses: { value: AccessStatus; title: string; label: string; color: string }[] = [
-  { value: 'pending', title: 'Solicitudes pendientes', label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200' },
+  { value: 'pending', title: 'Pendientes', label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200' },
   { value: 'approved', title: 'Aprobadas', label: 'Aprobado', color: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200' },
   { value: 'rejected', title: 'Rechazadas', label: 'Rechazado', color: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200' },
 ];
@@ -44,13 +45,13 @@ export function AccessRequests() {
 
   return <section className="space-y-6">
     <div className="flex flex-wrap items-center justify-between gap-4">
-      <div><p className="text-sm font-semibold text-blue-600">Administración</p><h1 className="text-2xl font-bold mt-1">Solicitudes de acceso</h1></div>
-      <button className="secondary-button" disabled={loading || !!busy} onClick={() => { setError(''); setRevision(value => value + 1); }}><RefreshCw size={16} /> Actualizar</button>
+      <div><h1 className="text-2xl font-bold">Solicitudes de acceso</h1><p className="mt-2 text-sm text-slate-500">Gestiona las solicitudes de ingreso a CloudOps.</p></div>
+      <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800" disabled={loading || !!busy} onClick={() => { setError(''); setRevision(value => value + 1); }}><RefreshCw size={16} /> Actualizar</button>
     </div>
     <div className="flex flex-wrap gap-2" aria-label="Filtrar solicitudes">
       {statuses.map(item => <button key={item.value} aria-pressed={status === item.value} disabled={!!busy} onClick={() => { setStatus(item.value); setPage(0); setError(''); setMessage(''); }} className={`rounded-xl px-4 py-2 text-sm font-semibold ${status === item.value ? 'bg-blue-600 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700'}`}>{item.title}</button>)}
     </div>
-    {error && <p role="alert" className="error-box">{error}</p>}
+    {error && <p role="alert" className="error-box">{userMessage(error, 'manageAccess')}</p>}
     {message && <p role="status" className="rounded-xl p-4 bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200">{message}</p>}
     <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       {loading ? <p role="status" className="p-8 flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={18} /> Cargando solicitudes…</p>
@@ -71,6 +72,6 @@ export function AccessRequests() {
           })}{!requests.length && <tr><td colSpan={4} className="p-8 text-center text-slate-500">Sin solicitudes en este estado.</td></tr>}</tbody>
         </table>}
     </div>
-    <div className="flex justify-between items-center text-sm"><span>{count} solicitudes · Página {page + 1}</span><div className="flex gap-4"><button disabled={loading || !!busy || page === 0} onClick={() => { setError(''); setPage(value => value - 1); }} className="disabled:opacity-40">Anterior</button><button disabled={loading || !!busy || (page + 1) * 25 >= count} onClick={() => { setError(''); setPage(value => value + 1); }} className="disabled:opacity-40">Siguiente</button></div></div>
+    <div className="flex flex-wrap justify-between items-center gap-3 text-sm"><span>{count} solicitudes · Página {page + 1}</span><div className="flex gap-4"><button disabled={loading || !!busy || page === 0} onClick={() => { setError(''); setPage(value => value - 1); }} className="disabled:opacity-40">Anterior</button><button disabled={loading || !!busy || (page + 1) * 25 >= count} onClick={() => { setError(''); setPage(value => value + 1); }} className="disabled:opacity-40">Siguiente</button></div></div>
   </section>;
 }

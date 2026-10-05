@@ -1,3 +1,4 @@
+import { userMessage } from '../lib/uiMessages';
 import React, { useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { CheckCircle2, AlertTriangle, Info, XCircle, X } from 'lucide-react';
@@ -40,10 +41,11 @@ export const ToastNotification: React.FC = () => {
             <div className="flex-1 min-w-0">
               <h5 className="font-bold text-xs leading-tight">{notif.title}</h5>
               <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 leading-snug">
-                {notif.message}
+                {notif.type === 'error' ? userMessage(notif.message) : notif.message}
               </p>
             </div>
             <button
+              aria-label="Descartar notificación"
               onClick={() => removeNotification(notif.id)}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             >

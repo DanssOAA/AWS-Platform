@@ -1,3 +1,4 @@
+import { userMessage } from '../lib/uiMessages';
 import { errorMessage } from '../lib/supabase';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
@@ -173,7 +174,7 @@ export const Costs: React.FC = () => {
       </div>
 
       <div className="flex flex-wrap items-center gap-3"><button onClick={save} disabled={saving || !costEstimates.length} className="primary-button">{saving ? 'Guardando…' : 'Guardar presupuesto'}</button><span className="text-xs text-slate-500">Estimación en USD según cantidad y horas de uso.</span></div>
-      {saveError && <p role="alert" className="error-box">{saveError}</p>}
+      {saveError && <p role="alert" className="error-box">{userMessage(saveError, 'costs')}</p>}
       {saved && <p role="status" className="text-sm text-green-600">Presupuesto guardado.</p>}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">

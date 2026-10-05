@@ -1,3 +1,4 @@
+import { userMessage } from '../lib/uiMessages';
 import { errorMessage } from '../lib/supabase';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
@@ -80,7 +81,7 @@ export const Planning: React.FC = () => {
             </div>
           </div>
 
-          {error && <p role="alert" className="error-box mb-4">{error}</p>}
+          {error && <p role="alert" className="error-box mb-4">{userMessage(error, 'planning')}</p>}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -143,7 +144,7 @@ export const Planning: React.FC = () => {
                 >
                   {GLOBAL_REGIONS.map((reg) => (
                     <option key={reg.id} value={reg.code}>
-                      {reg.flag} {reg.name} ({reg.code})
+                      {reg.name} · {reg.code}
                     </option>
                   ))}
                 </select>

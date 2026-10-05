@@ -110,11 +110,9 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30">
-                Propuesta activa
+                Arquitectura evaluada
               </span>
-              <span className="text-xs text-slate-400 font-mono break-all">
-                ID: {activeProposal?.id || 'Sin propuesta activa'}
-              </span>
+
             </div>
             <h2 className="text-2xl lg:text-3xl font-extrabold tracking-tight">
               {activeProposal?.solutionName || 'Sin propuesta registrada'}

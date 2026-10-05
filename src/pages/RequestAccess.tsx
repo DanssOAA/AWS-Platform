@@ -1,3 +1,4 @@
+import { userMessage } from '../lib/uiMessages';
 import { useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Cloud, Loader2 } from 'lucide-react';
@@ -31,7 +32,7 @@ export function RequestAccess() {
         : <form onSubmit={submit} className="space-y-5">
           <div><label htmlFor="access-email" className="field-label">Correo electrónico</label>
             <input id="access-email" type="email" autoComplete="email" maxLength={254} required disabled={pending} value={email} onChange={event => setEmail(event.target.value)} className="field" placeholder="nombre@organizacion.com" /></div>
-          {(error || configurationError) && <p role="alert" className="error-box">{error || configurationError}</p>}
+          {(error || configurationError) && <p role="alert" className="error-box">{userMessage(error || configurationError || '', 'requestAccess')}</p>}
           <button disabled={pending || !!configurationError} className="primary-button w-full justify-center">{pending && <Loader2 size={18} className="animate-spin" aria-hidden="true" />}{pending ? 'Enviando solicitud…' : 'Enviar solicitud'}</button>
         </form>}
       <Link to="/login" className="inline-block mt-6 text-sm font-semibold text-blue-600 hover:underline">Volver al login</Link>

@@ -1,5 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { errorMessage } from '../lib/supabase';
+import { userMessage } from '../lib/uiMessages';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { GLOBAL_REGIONS } from '../data/awsServices';
@@ -7,14 +8,9 @@ import {
   Sun,
   Moon,
   Globe,
-  Search,
   Bell,
-  Cloud,
-  CheckCircle2,
   Menu,
   X,
-  Check,
-  AlertCircle
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -24,13 +20,10 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const {
     activeTab,
-    setActiveTab,
     isDarkMode,
     toggleDarkMode,
     selectedRegion,
     setSelectedRegion,
-    globalSearch,
-    setGlobalSearch,
     notifications,
     removeNotification,
     addNotification
@@ -42,7 +35,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [showNotificationsMenu, setShowNotificationsMenu] = useState(false);
 
   const pageTitles: Record<string, { title: string; subtitle: string }> = {
-    admin: { title: 'Solicitudes de acceso', subtitle: 'Administración de CloudOps' },
     dashboard: {
       title: 'Dashboard',
       subtitle: 'Resumen de arquitectura, costos y seguridad',
@@ -75,14 +67,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   const currentInfo = pageTitles[activeTab] || pageTitles.dashboard;
 
-  const handleAwsStatusClick = () => {
-    addNotification('info', 'Estado Global AWS', 'Todos los servicios en las 33 regiones están 100% operativos.');
-  };
-
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors">
       <div className="px-4 lg:px-8 py-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className={`flex min-w-0 items-center gap-3 ${activeTab === 'admin' ? 'lg:hidden' : ''}`}>
           <button
             onClick={onToggleSidebar}
             className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -90,29 +78,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <div>
+          {activeTab !== 'admin' && <div>
             <h1 className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white tracking-tight">
               {currentInfo.title}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">
               {currentInfo.subtitle}
             </p>
-          </div>
+          </div>}
         </div>
-        <div className="flex items-center flex-wrap gap-3">
-          <div className="relative flex-1 md:w-56">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              aria-label="Buscar servicio AWS"
-              onKeyDown={e => { if (e.key === 'Enter') setActiveTab('services'); }}
-              type="text"
-              placeholder="Buscar servicio AWS..."
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            />
-          </div>
-          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 lg:ml-auto">
+          <div className="flex min-w-0 max-w-full items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs">
             <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <select
               aria-label="Región activa"
@@ -121,11 +97,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 setSelectedRegion(e.target.value);
                 addNotification('info', 'Región actualizada', `Región activa: ${e.target.value}`);
               }}
-              className="bg-transparent text-slate-700 dark:text-slate-200 font-semibold focus:outline-none cursor-pointer"
+              className="min-w-0 max-w-[19rem] flex-1 bg-transparent text-slate-700 dark:text-slate-200 font-semibold focus:outline-none cursor-pointer"
             >
               {GLOBAL_REGIONS.map((reg) => (
                 <option key={reg.id} value={reg.code} className="bg-white dark:bg-slate-900">
-                  {reg.flag} {reg.code}
+                  {reg.name} · {reg.code}
                 </option>
               ))}
             </select>
@@ -142,6 +118,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               onClick={() => setShowNotificationsMenu(prev => !prev)}
               className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer relative"
               title="Ver notificaciones"
+              aria-label="Ver notificaciones"
+              aria-expanded={showNotificationsMenu}
             >
               <Bell className="w-4 h-4" />
               {notifications.length > 0 && (
@@ -157,6 +135,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                     <Bell className="w-3.5 h-3.5 text-blue-500" /> Notificaciones
                   </h4>
                   <button
+                    aria-label="Cerrar notificaciones"
                     onClick={() => setShowNotificationsMenu(false)}
                     className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
@@ -170,9 +149,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                       <div key={n.id} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-start justify-between text-xs">
                         <div>
                           <span className="font-semibold text-slate-800 dark:text-slate-200 block">{n.title}</span>
-                          <span className="text-slate-500 dark:text-slate-400 text-[11px]">{n.message}</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px]">{n.type === 'error' ? userMessage(n.message) : n.message}</span>
                         </div>
                         <button
+                          aria-label="Descartar notificación"
                           onClick={() => removeNotification(n.id)}
                           className="text-slate-400 hover:text-rose-500"
                         >
@@ -191,7 +171,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </div>
         </div>
       </div>
-      <div className="px-4 lg:px-8 pb-3 flex flex-wrap justify-end items-center gap-3 text-xs"><span className="text-slate-500 break-all">{user?.email}</span><span className="text-green-600 font-semibold">Sesión activa</span><button disabled={signingOut} onClick={logout} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800">{signingOut ? 'Cerrando…' : 'Cerrar sesión'}</button></div>
+      <div className="px-4 lg:px-8 pb-3 flex flex-wrap justify-end items-center gap-3 text-xs"><span className="text-slate-500 break-all">{user?.email}</span><span className="text-[10px] text-slate-400">Sesión activa</span><button disabled={signingOut} onClick={logout} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800">{signingOut ? 'Cerrando…' : 'Cerrar sesión'}</button></div>
     </header>
   );
 };

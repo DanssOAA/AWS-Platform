@@ -1,3 +1,4 @@
+import { userMessage } from '../lib/uiMessages';
 import { useState } from 'react';
 import { MessageSquare, X, Loader2, Send } from 'lucide-react';
 import { FunctionsHttpError } from '@supabase/supabase-js';
@@ -49,9 +50,9 @@ export function CloudAssistant() {
       <div className="sticky top-0 bg-white dark:bg-slate-900 p-4 border-b dark:border-slate-800 flex justify-between items-center"><div><h2 className="font-bold">Asistente CloudOps</h2><p className="text-xs text-slate-500">Consultas sobre tu arquitectura</p></div><button aria-label="Cerrar asistente" onClick={() => setOpen(false)} className="p-2"><X size={18} /></button></div>
       <div className="p-4 space-y-4"><div className="grid grid-cols-2 gap-2">{actions.map(action => <button key={action.focus} disabled={busy} onClick={() => void ask(action.question, action.focus)} className="p-2 text-xs text-left rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-800">{action.label}</button>)}</div>
         <form onSubmit={e => { e.preventDefault(); void ask(question); }} className="space-y-2"><label htmlFor="assistant-question" className="text-sm font-medium">Tu consulta</label><textarea id="assistant-question" className="field" rows={3} maxLength={2000} required value={question} onChange={e => setQuestion(e.target.value)} placeholder="¿Qué función cumple Route 53?" /><button className="primary-button w-full justify-center" disabled={busy || !question.trim()}>{busy ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}{busy ? 'Analizando…' : 'Consultar'}</button></form>
-        {error && <p role="alert" className="error-box">{error}</p>}
+        {error && <p role="alert" className="error-box">{userMessage(error, 'assistant')}</p>}
         {result && <div aria-live="polite" className="space-y-4 text-sm"><div><h3 className="font-bold mb-1">Análisis</h3><p className="whitespace-pre-wrap">{result.summary}</p></div><div className="flex gap-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><span>Puntuación: <strong>{result.score}/100</strong></span><span>Riesgo: <strong>{result.riskLevel}</strong></span></div><div><h3 className="font-bold mb-1">Recomendaciones</h3><ul className="list-disc pl-5 space-y-1">{result.recommendations.map((item, i) => <li key={i}>{item}</li>)}</ul></div><div><h3 className="font-bold mb-1">Explicación técnica</h3><p className="whitespace-pre-wrap">{result.explanation}</p></div></div>}
       </div></section>}
-    <button aria-expanded={open} onClick={() => setOpen(prev => !prev)} className="primary-button shadow-lg"><MessageSquare size={18} /><span>Asistente CloudOps</span></button>
+    <button aria-expanded={open} onClick={() => setOpen(prev => !prev)} className="primary-button shadow-lg"><MessageSquare size={18} /><span>Asistente</span></button>
   </div>;
 }

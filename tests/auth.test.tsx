@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { FunctionsHttpError } from '@supabase/supabase-js';
@@ -60,14 +60,14 @@ describe('Solicitud y verificación OTP compatibles con FaceIA', () => {
     expect(screen.getByLabelText('Correo electrónico')).toHaveProperty('value', 'demo@example.test');
     expect(mocks.verifyOtp).not.toHaveBeenCalled();
   });
-  it('muestra el mensaje real devuelto por un error HTTP de la función', async () => {
+  it('explica el límite de envío sin mostrar detalles internos', async () => {
     mocks.invoke.mockResolvedValue({ data: null, error: new FunctionsHttpError(new Response(JSON.stringify({ error: 'Límite de envío alcanzado' }), { status: 429 })) });
     setup(); await startRequest();
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Límite de envío alcanzado');
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Se alcanzó el límite de intentos. Espera unos minutos y vuelve a intentarlo.');
   });
   it('verifica directamente con type email y conserva el formulario al fallar', async () => {
     setup(); await startRequest(); await enterCode();
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Código incorrecto o expirado');
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'El código es incorrecto o venció. Revisa el código o solicita uno nuevo.');
     expect(mocks.verifyOtp).toHaveBeenCalledWith({ email: 'demo@example.test', token: '123456', type: 'email' });
     expect(screen.getByLabelText('Código de acceso de 6 dígitos')).toHaveProperty('value', '123456');
     expect(mocks.invoke).toHaveBeenCalledTimes(1);
@@ -87,7 +87,7 @@ describe('Solicitud y verificación OTP compatibles con FaceIA', () => {
   it('no redirige si verifyOtp responde sin sesión aunque no haya error', async () => {
     mocks.verifyOtp.mockResolvedValue({ data: { session: null }, error: null });
     setup(); await startRequest(); await enterCode();
-    expect((await screen.findByRole('alert')).textContent).toContain('no devolvió una sesión válida');
+    expect((await screen.findByRole('alert')).textContent).toContain('No se pudo confirmar el acceso');
     expect(screen.queryByText('Dashboard protegido')).toBeNull();
   });
   it('mantiene el bloqueo 60 s, reenvía por la misma función y reinicia el contador', async () => {
@@ -147,7 +147,7 @@ describe('Solicitud y verificación OTP compatibles con FaceIA', () => {
     act(() => vi.advanceTimersByTime(60000));
     mocks.invoke.mockResolvedValue({ data: { success: false, error: 'Envío temporalmente bloqueado' }, error: null });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Reenviar código' })); });
-    expect(screen.getByRole('alert').textContent).toBe('Envío temporalmente bloqueado');
+    expect(screen.getByRole('alert').textContent).toBe('Se alcanzó el límite de intentos. Espera unos minutos y vuelve a intentarlo.');
     expect(screen.getByLabelText('Código de acceso de 6 dígitos')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Reenviar código' })).toHaveProperty('disabled', true);
   });

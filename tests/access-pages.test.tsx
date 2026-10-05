@@ -36,7 +36,7 @@ describe('Request access page', () => {
     render(<MemoryRouter><RequestAccess /></MemoryRouter>);
     fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: pending.email } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }));
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Demasiadas solicitudes');
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Se alcanzó el límite de intentos. Espera unos minutos y vuelve a intentarlo.');
     expect(screen.getByLabelText('Correo electrónico')).toHaveProperty('value', pending.email);
   });
 });
@@ -79,7 +79,7 @@ describe('Admin request actions', () => {
   it('shows server errors without claiming successful approval', async () => {
     mocks.invoke.mockResolvedValue({ data: { success: false, error: 'Usuario aprobado, pero falló el correo' }, error: null });
     adminRoutes(); fireEvent.click(await screen.findByRole('button', { name: 'Aprobar' }));
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Usuario aprobado, pero falló el correo');
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'El acceso fue aprobado, pero no se pudo confirmar el envío del código. Reintenta el envío desde Aprobadas.');
     expect(screen.queryByText('Usuario aprobado. Se envió un código de acceso.')).toBeNull();
   });
   it('offers delivery retry for approved requests without a sent timestamp', async () => {

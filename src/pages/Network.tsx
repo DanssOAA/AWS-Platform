@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, Play, Network, Globe, Layers, Server, Database, Zap } from 'lucide-react';
+import { ArrowDown, CheckCircle2, Network, Globe, Layers, Server, Database, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
 type Node = { id: string; name: string; category: string; purpose: string; subnet: string; public: boolean; description: string; service?: string };
@@ -31,12 +32,12 @@ export function NetworkPage() {
     return <button type="button" aria-pressed={selected === id} onClick={() => setSelected(id)} className={`w-full text-left rounded-xl p-4 border transition-colors ${selected === id ? 'border-blue-400 bg-blue-950 ring-2 ring-blue-500' : 'border-slate-700 bg-slate-900 hover:bg-slate-800'}`}><div className="flex items-center gap-3"><Icon size={20} className="shrink-0 text-blue-300" /><span className="font-semibold text-sm">{node.name}</span></div><p className="text-xs text-slate-400 mt-2">{node.purpose}</p>{node.service && <span className={`block mt-2 text-xs ${included ? 'text-green-400' : 'text-amber-300'}`}>{included ? 'Incluido' : 'No incluido'}</span>}</button>;
   };
   function simulate() {
-    if (missing.length) { addNotification('warning', 'Flujo incompleto', `Servicios pendientes: ${missing.join(', ')}.`); return; }
+    if (missing.length) { addNotification('warning', 'Configuración pendiente', `Falta configurar ${missing.map(id => ({ vpc: 'una VPC', route53: 'Route 53', cloudfront: 'CloudFront', ec2: 'EC2', rds: 'RDS' })[id]).join(', ')} para completar la arquitectura.`); return; }
     setSimulating(true);
-    timer.current = setTimeout(() => { setSimulating(false); addNotification('info', 'Recorrido completado', 'DNS → CloudFront → ALB → EC2 → RDS.'); }, 2500);
+    timer.current = setTimeout(() => { setSimulating(false); addNotification('info', 'Servicios revisados', 'VPC, Route 53, CloudFront, EC2 y RDS están incluidos.'); }, 2500);
   }
   return <div className="space-y-6">
-    <section className="panel flex flex-wrap justify-between items-center gap-4"><div><h2 className="text-xl font-bold">Diagrama de red</h2><p className="text-sm text-slate-500 mt-2">Componentes y conexiones. Región: {selectedRegion}.</p></div><button className="primary-button" onClick={simulate} disabled={simulating}><Play size={16} />{simulating ? 'Mostrando recorrido…' : 'Ver recorrido'}</button></section>
+    <section className="panel flex flex-wrap justify-between items-center gap-4"><div><h2 className="text-xl font-bold">Diagrama de red</h2><p className="text-sm text-slate-500 mt-2">Componentes y conexiones. Región: {selectedRegion}.</p></div><div className="flex flex-wrap items-center gap-3">{missing.length > 0 && <Link to="/planning" className="text-sm font-semibold text-blue-600 dark:text-blue-400">Completar configuración</Link>}<button className="primary-button" onClick={simulate} disabled={simulating}><CheckCircle2 size={16} />{simulating ? 'Revisando…' : 'Revisar arquitectura'}</button></div></section>
     <div className="grid xl:grid-cols-[minmax(0,1fr)_300px] gap-6 items-start">
       <section className={`bg-slate-950 rounded-2xl p-4 sm:p-6 text-white space-y-3 min-w-0 ${simulating ? 'animate-pulse' : ''}`} aria-label="Diagrama de arquitectura">
         <p className="text-xs text-slate-400 mb-4">Arquitectura de tres capas</p>

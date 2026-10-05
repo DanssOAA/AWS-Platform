@@ -62,7 +62,7 @@ describe('Region explorer interactions', () => {
   });
   it('explores a region before committing it as the planning region', () => {
     const { props } = setup();
-    fireEvent.click(screen.getByRole('button', { name: 'Explorar México central' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar México central' }));
     expect(screen.getByText('mxc1-az3')).toBeTruthy();
     expect(screen.getByText('Sin estimación')).toBeTruthy();
     expect(props.onSelectRegion).not.toHaveBeenCalled();
@@ -73,7 +73,7 @@ describe('Region explorer interactions', () => {
     setup();
     fireEvent.click(screen.getByRole('button', { name: 'Ver Tokio (ap-northeast-1), 4 zonas' }));
     expect(screen.getByText('apne1-az4')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Explorar Tokio' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Consultar Tokio' }).getAttribute('aria-pressed')).toBe('true');
   });
   it('filters map and catalog together and can restore the global view', () => {
     setup();

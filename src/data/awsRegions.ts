@@ -11,7 +11,7 @@ export type RegionArea = typeof REGION_AREAS[number];
 type RegionSeed = [code: string, name: string, location: string, country: string, area: RegionArea,
   latitude: number, longitude: number, azPrefix: string, azNumbers: number[], optIn: boolean];
 const regions: RegionSeed[] = [
-  ['us-east-1', 'Norte de Virginia', 'Estados Unidos · Virginia', 'US', 'América del Norte', 38.9, -77.5, 'use1', [1, 2, 3, 4, 5, 6], false],
+  ['us-east-1', 'Virginia del Norte', 'Estados Unidos · Virginia', 'US', 'América del Norte', 38.9, -77.5, 'use1', [1, 2, 3, 4, 5, 6], false],
   ['us-east-2', 'Ohio', 'Estados Unidos · Ohio', 'US', 'América del Norte', 40.0, -83.0, 'use2', [1, 2, 3], false],
   ['us-west-1', 'Norte de California', 'Estados Unidos · California', 'US', 'América del Norte', 37.4, -121.9, 'usw1', [1, 2, 3], false],
   ['us-west-2', 'Oregón', 'Estados Unidos · Oregón', 'US', 'América del Norte', 45.8, -119.7, 'usw2', [1, 2, 3, 4], false],

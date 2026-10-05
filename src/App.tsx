@@ -1,3 +1,4 @@
+import { userMessage } from './lib/uiMessages';
 import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -33,7 +34,7 @@ const MainLayout: React.FC = () => {
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           {proposalsLoading && <p role="status" className="mb-4 text-sm">Cargando propuestas…</p>}
-          {proposalsError && <div role="alert" className="error-box mb-4">{proposalsError} <button className="underline" onClick={() => void loadProposals()}>Reintentar</button></div>}
+          {proposalsError && <div role="alert" className="error-box mb-4">{userMessage(proposalsError, 'proposals')} <button className="underline" onClick={() => void loadProposals()}>Reintentar</button></div>}
           <Suspense fallback={<p role="status" className="py-10 text-center">Cargando módulo…</p>}><Outlet /></Suspense>
         </main>
 
