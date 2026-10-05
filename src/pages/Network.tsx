@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, CheckCircle2, Network, Globe, Layers, Server, Database, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { ExpandablePanel } from '../components/ExpandablePanel';
+import { NetworkEditor } from '../components/NetworkEditor';
 
 type Node = { id: string; name: string; category: string; purpose: string; subnet: string; public: boolean; description: string; service?: string };
 const nodes: Node[] = [
@@ -18,6 +20,22 @@ const nodes: Node[] = [
 ];
 const icons = { internet: Globe, route53: Network, cloudfront: Zap, vpc: Layers, ec2: Server, rds: Database };
 export function NetworkPage() {
+  const [view, setView] = useState<'custom' | 'reference'>('custom');
+  return <ExpandablePanel label="editor de red">{(controls, expanded) => <div className="space-y-5">
+    <section className="panel flex flex-wrap items-center justify-between gap-4">
+      <div><h2 className="text-xl font-bold">Diseñador de red</h2><p className="mt-2 text-sm text-slate-500">Tu borrador es independiente de la propuesta y sus costos.</p></div>
+      {controls}
+      <div className="flex w-full flex-wrap gap-2" aria-label="Vista de red">
+        <button className="editor-control" aria-pressed={view === 'custom'} onClick={() => setView('custom')}>Mi red</button>
+        <button className="editor-control" aria-pressed={view === 'reference'} onClick={() => setView('reference')}>Arquitectura de referencia</button>
+      </div>
+    </section>
+    <div hidden={view !== 'custom'}><NetworkEditor expanded={expanded} /></div>
+    {view === 'reference' && <ReferenceNetwork />}
+  </div>}</ExpandablePanel>;
+}
+
+function ReferenceNetwork() {
   const { selectedRegion, architectureServices, security, addNotification } = useApp();
   const [selected, setSelected] = useState('vpc');
   const [simulating, setSimulating] = useState(false);

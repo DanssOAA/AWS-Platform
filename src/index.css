@@ -61,7 +61,18 @@
 
 @layer components {
   .region-map-control { @apply inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white; }
+  .editor-control { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700; }
+  .editor-control[aria-pressed='true'] { @apply border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300; }
 }
+
+.expandable-panel { position: static; display: block; margin: 0; padding: 0; width: 100%; max-width: none; max-height: none; border: 0; background: transparent; color: inherit; overflow: visible; }
+.expandable-panel.is-expanded { position: fixed; inset: 0; width: 100%; height: 100dvh; padding: 16px; overflow: auto; background: #f8fafc; }
+.dark .expandable-panel.is-expanded { background: #0f172a; color: #e2e8f0; }
+.expandable-panel::backdrop { background: #020617; }
+.region-explorer .editor-control { border-color: #475569; background: #1e293b; color: #e2e8f0; }
+.network-board { background-image: radial-gradient(circle, #334155 1px, transparent 1px); background-size: 20px 20px; }
+.network-edge-flow { animation: region-dash-flow 3s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .network-edge-flow { animation: none !important; } }
 
 .region-map-viewport { scrollbar-color: #33506a #081322; }
 .region-map-flow { animation: region-dash-flow 3s linear infinite; }

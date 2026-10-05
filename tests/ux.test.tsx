@@ -86,6 +86,7 @@ describe('Header and useful controls', () => {
   });
   it('retains architecture validation with readable service names and an actionable link', () => {
     render(<MemoryRouter><NetworkPage /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'Arquitectura de referencia' }));
     expect(screen.queryByRole('button', { name: /recorrido|tour/i })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Revisar arquitectura' }));
     expect(state.addNotification).toHaveBeenCalledWith('warning', 'Configuración pendiente', 'Falta configurar una VPC para completar la arquitectura.');

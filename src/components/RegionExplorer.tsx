@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Check, Globe2, Layers, MapPin, Minus, Pause, Play, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { AWS_AZ_SOURCE, AWS_REGION_SOURCE, GLOBAL_REGIONS, REGION_AREAS } from '../data/awsRegions';
 import { connectionPath, filterRegions, projectRegion } from '../lib/regionMap';
+import { ExpandablePanel } from './ExpandablePanel';
 
 interface RegionExplorerProps {
   selectedRegion: string;
@@ -45,7 +46,7 @@ export function RegionExplorer({ selectedRegion, onSelectRegion, onClear, onRese
   }
 
   return <section className="region-explorer space-y-6" aria-label="Explorador de regiones AWS" data-motion={moving ? 'running' : 'paused'}>
-    <div className="overflow-hidden rounded-3xl border border-slate-800 bg-[#081322] text-white shadow-xl">
+    <ExpandablePanel label="mapa de regiones">{(controls, expanded) => <div className="overflow-hidden rounded-3xl border border-slate-800 bg-[#081322] text-white shadow-xl">
       <div className="flex flex-wrap items-start justify-between gap-5 px-5 py-6 sm:px-7">
         <div><p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-400"><Globe2 size={15} /> Infraestructura global</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight">Mapa de regiones AWS</h2>
@@ -62,6 +63,7 @@ export function RegionExplorer({ selectedRegion, onSelectRegion, onClear, onRese
           <label className="relative block w-full sm:w-80"><Search size={16} className="absolute left-3 top-3 text-slate-500" /><span className="sr-only">Buscar región</span>
             <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Ciudad, país o código de región" className="w-full rounded-xl border border-slate-700 bg-slate-950/60 py-2.5 pl-10 pr-3 text-xs text-white placeholder:text-slate-500" /></label>
           <div className="flex flex-wrap gap-2">
+            {controls}
             <button type="button" aria-pressed={showConnections} onClick={() => setShowConnections(value => !value)} className="region-map-control"><Layers size={14} /> Enlaces</button>
             <button type="button" aria-pressed={!moving} onClick={() => setMoving(value => !value)} className="region-map-control">{moving ? <Pause size={14} /> : <Play size={14} />}{moving ? 'Pausar movimiento' : 'Reanudar movimiento'}</button>
             <button type="button" onClick={onClear} className="region-map-control text-rose-300"><Trash2 size={14} /> Vaciar</button>
@@ -74,7 +76,7 @@ export function RegionExplorer({ selectedRegion, onSelectRegion, onClear, onRese
       </div>
 
       <div className="relative">
-        <div ref={viewport} tabIndex={0} aria-label="Mapa de regiones, desplazable al ampliar" className="region-map-viewport h-[380px] overflow-auto sm:h-[480px] lg:h-[560px]">
+        <div ref={viewport} tabIndex={0} aria-label="Mapa de regiones, desplazable al ampliar" className="region-map-viewport h-[380px] overflow-auto sm:h-[480px] lg:h-[560px]" style={expanded ? { height: 'max(360px, calc(100dvh - 310px))' } : undefined}>
           <div className="relative min-h-full" style={{ width: `${zoom * 100}%`, minWidth: 760 * zoom, aspectRatio: '2 / 1' }}>
             <svg viewBox="0 0 1200 600" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
               <defs>
@@ -117,7 +119,7 @@ export function RegionExplorer({ selectedRegion, onSelectRegion, onClear, onRese
         <div className="flex flex-wrap items-center gap-4"><span className="flex items-center gap-2"><i className="h-2 w-2 rounded-full bg-emerald-400" />Región AWS</span><span className="flex items-center gap-2"><i className="h-2 w-2 rounded-full bg-amber-400" />Región principal</span><span className="flex items-center gap-2"><i className="w-5 border-t border-dashed border-cyan-300" />Enlaces de referencia</span></div>
         <span>Ubicaciones regionales aproximadas · {visibleRegions.length} regiones visibles</span>
       </div>
-    </div>
+    </div>}</ExpandablePanel>
 
     <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
       <section className="panel flex flex-col" aria-label="Detalle de región" aria-live="polite">
