@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   Calendar,
   Layers,
-  Sparkles,
   Server
 } from 'lucide-react';
 
@@ -65,8 +64,8 @@ export const Planning: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm">
+      <div className="grid grid-cols-1 gap-8">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
               <FileSpreadsheet className="w-6 h-6" />
@@ -232,28 +231,6 @@ export const Planning: React.FC = () => {
               <PlusCircle className="w-5 h-5" /> {saving ? 'Guardando…' : 'Guardar propuesta'}
             </button>
           </form>
-        </div>
-        <div className="space-y-6">
-          <div className="bg-gradient-to-br from-blue-900 to-slate-900 text-white p-6 rounded-2xl shadow-md border border-blue-800">
-            <div className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-wider mb-2">
-              <Sparkles className="w-4 h-4" /> Criterios de diseño
-            </div>
-            <h4 className="text-lg font-bold mb-2">AWS Well-Architected</h4>
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              Operación, seguridad, fiabilidad, rendimiento, costos y sostenibilidad.
-            </p>
-            <div className="space-y-2 text-xs text-slate-300">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Planificar Multi-AZ según disponibilidad
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Auto Scaling según demanda
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Evaluar cifrado de datos con KMS
-              </div>
-            </div>
-          </div>
         </div>
       </div>
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
