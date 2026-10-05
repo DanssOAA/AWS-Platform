@@ -1,14 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { CheckCircle2, AlertTriangle, Info, XCircle, X } from 'lucide-react';
 
 export const ToastNotification: React.FC = () => {
   const { notifications, removeNotification } = useApp();
 
+  useEffect(() => {
+    if (!notifications.length) return;
+    const timer = setTimeout(() => removeNotification(notifications[0].id), 6000);
+    return () => clearTimeout(timer);
+  }, [notifications, removeNotification]);
+
   if (notifications.length === 0) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 w-[min(384px,calc(100vw-2rem))] pointer-events-none">
       {notifications.map((notif) => {
         const icons = {
           success: <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />,
@@ -26,6 +32,7 @@ export const ToastNotification: React.FC = () => {
 
         return (
           <div
+            role="status"
             key={notif.id}
             className={`pointer-events-auto border rounded-xl p-3.5 shadow-lg backdrop-blur-md flex items-start gap-3 transition-all transform translate-y-0 duration-200 text-slate-800 dark:text-slate-100 ${borderColors[notif.type]}`}
           >

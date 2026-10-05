@@ -1,5 +1,5 @@
 import React from 'react';
-import * as Icons from 'lucide-react';
+import { Icons } from './icons';
 
 interface StatCardProps {
   title: string;

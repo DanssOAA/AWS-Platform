@@ -18,7 +18,7 @@ export const SecurityCard: React.FC<SecurityCardProps> = ({ check }) => {
   };
 
   const handleFixCheck = () => {
-    addNotification('success', 'Control Auditado', `Se ha ejecutado la revisión de seguridad para "${check.title}".`);
+    addNotification('success', 'Control revisado', `Revisión de "${check.title}".`);
   };
 
   return (
@@ -40,7 +40,7 @@ export const SecurityCard: React.FC<SecurityCardProps> = ({ check }) => {
           </div>
           <div className="flex items-center gap-2">
             <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${partyBadgeStyle[check.responsibleParty]}`}>
-              {check.responsibleParty === 'AWS' ? 'Responsabilidad AWS' : check.responsibleParty === 'Cliente' ? 'Responsabilidad Cliente' : 'Compartido'}
+              {check.responsibleParty === 'AWS' ? 'AWS' : check.responsibleParty === 'Cliente' ? 'Cliente' : 'Compartido'}
             </span>
             <StatusBadge status={check.status} />
           </div>
@@ -53,7 +53,7 @@ export const SecurityCard: React.FC<SecurityCardProps> = ({ check }) => {
         <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 text-xs border border-slate-100 dark:border-slate-800 flex items-start gap-2 mb-4">
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
           <div>
-            <span className="font-semibold text-slate-700 dark:text-slate-200 block">Recomendación / Estado:</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-200 block">Recomendación</span>
             <span className="text-slate-600 dark:text-slate-400">{check.recommendation}</span>
           </div>
         </div>
@@ -64,7 +64,7 @@ export const SecurityCard: React.FC<SecurityCardProps> = ({ check }) => {
           onClick={handleFixCheck}
           className="w-full py-2 px-3 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Auditar / Ejecutar Verificación
+          <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Revisar control
         </button>
       </div>
     </div>

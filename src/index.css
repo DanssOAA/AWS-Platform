@@ -3,9 +3,25 @@
 @tailwind utilities;
 
 @layer base {
+  html { overflow-wrap: break-word; }
+  body { min-width: 320px; }
+  button, a, input, select, textarea { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2; }
+  button:disabled { @apply opacity-50 cursor-not-allowed; }
   body {
     @apply bg-[#F8FAFC] text-[#1E293B] font-sans antialiased;
   }
+}
+
+@layer components {
+  .field { @apply w-full min-w-0 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-3 text-sm text-slate-800 dark:text-white; }
+  .field-label { @apply block text-sm font-medium mb-2; }
+  .primary-button { @apply inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-50; }
+  .error-box { @apply rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:border-red-900 dark:text-red-200; }
+  .panel { @apply rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-sm min-w-0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
 /* Custom scrollbar styling */
@@ -41,4 +57,24 @@
 
 .animate-pulse-flow {
   animation: pulse-flow 2.5s infinite ease-in-out;
+}
+
+@layer components {
+  .region-map-control { @apply inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white; }
+}
+
+.region-map-viewport { scrollbar-color: #33506a #081322; }
+.region-map-flow { animation: region-dash-flow 3s linear infinite; }
+.region-map-ring { animation: region-ring 3s ease-out infinite; }
+.az-link-flow { animation: az-link-flow 3s linear infinite; }
+.region-explorer[data-motion='paused'] .region-map-flow,
+.region-explorer[data-motion='paused'] .region-map-ring,
+.region-explorer[data-motion='paused'] .az-link-flow { animation-play-state: paused; }
+
+@keyframes region-dash-flow { to { stroke-dashoffset: -56; } }
+@keyframes region-ring { 0% { transform: scale(0.75); opacity: 0.9; } 100% { transform: scale(1.65); opacity: 0; } }
+@keyframes az-link-flow { from { transform: translateX(-100%); } to { transform: translateX(400%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .region-map-flow, .region-map-ring, .az-link-flow { animation: none !important; }
 }

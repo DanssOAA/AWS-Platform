@@ -1,3 +1,4 @@
+import { errorMessage } from '../lib/supabase';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { INITIAL_AWS_SERVICES, GLOBAL_REGIONS } from '../data/awsServices';
@@ -14,7 +15,9 @@ import {
 } from 'lucide-react';
 
 export const Planning: React.FC = () => {
-  const { proposals, addProposal, setSelectedServiceModal } = useApp();
+  const { proposals, addProposal, setSelectedServiceModal, activeProposal, activateProposal, proposalsLoading } = useApp();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const [solutionName, setSolutionName] = useState('');
   const [appType, setAppType] = useState('Aplicación Web SPA + API REST');
@@ -33,14 +36,17 @@ export const Planning: React.FC = () => {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!solutionName.trim() || !description.trim()) {
-      alert('Por favor completa los campos obligatorios Nombre y Descripción.');
+      setError('Completa el nombre y la descripción.');
       return;
     }
 
-    addProposal({
+    if (!selectedServices.length || estimatedUsers < 1) { setError('Selecciona un servicio e indica al menos un usuario.'); return; }
+    setSaving(true); setError('');
+    try {
+    await addProposal({
       solutionName,
       appType,
       description,
@@ -51,15 +57,14 @@ export const Planning: React.FC = () => {
       migrationGoal,
     });
 
-    // Reset form
     setSolutionName('');
     setDescription('');
+    } catch (failure) { setError(errorMessage(failure)); } finally { setSaving(false); }
   };
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Form Container (Left Side 2 cols) */}
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
@@ -67,25 +72,26 @@ export const Planning: React.FC = () => {
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-                Registrar Nueva Propuesta Cloud
+                Nueva propuesta
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Planifica la arquitectura especificando requerimientos clave y servicios requeridos
+                Define requisitos, región y servicios.
               </p>
             </div>
           </div>
 
+          {error && <p role="alert" className="error-box mb-4">{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Nombre & Tipo */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Nombre de la Solución *
+                <label htmlFor="planning-solutionName" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Nombre de la solución *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ej: E-Commerce Cloud Standard v2"
+                  placeholder="Ej.: Tienda online"
+                  id="planning-solutionName"
                   value={solutionName}
                   onChange={(e) => setSolutionName(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -93,45 +99,44 @@ export const Planning: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Tipo de Aplicación
+                <label htmlFor="planning-appType" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Tipo de aplicación
                 </label>
                 <select
+                  id="planning-appType"
                   value={appType}
                   onChange={(e) => setAppType(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="Aplicación Web SPA + API REST">Aplicación Web SPA + API REST</option>
-                  <option value="Plataforma E-Commerce Enterprise">Plataforma E-Commerce Enterprise</option>
-                  <option value="Arquitectura de Microservicios Serverless">Arquitectura de Microservicios Serverless</option>
-                  <option value="Sistema de Procesamiento Data Lake / Big Data">Sistema de Procesamiento Data Lake / Big Data</option>
-                  <option value="Portal Institucional & CMS">Portal Institucional & CMS</option>
+                  <option value="Aplicación Web SPA + API REST">Aplicación web y API REST</option>
+                  <option value="Plataforma E-Commerce Enterprise">Comercio electrónico</option>
+                  <option value="Arquitectura de Microservicios Serverless">Microservicios serverless</option>
+                  <option value="Sistema de Procesamiento Data Lake / Big Data">Data Lake / Big Data</option>
+                  <option value="Portal Institucional & CMS">Portal y CMS</option>
                 </select>
               </div>
             </div>
-
-            {/* Descripción */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Descripción Detallada *
+              <label htmlFor="planning-description" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Descripción *
               </label>
               <textarea
                 rows={3}
                 required
-                placeholder="Explica brevemente el alcance de la aplicación empresarial..."
-                value={description}
+                placeholder="Describe el alcance de la aplicación"
+                id="planning-description"
+                  value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
-            {/* Región & Usuarios & Disponibilidad */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Región Seleccionada
+                <label htmlFor="planning-selectedRegion" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Región AWS
                 </label>
                 <select
+                  id="planning-selectedRegion"
                   value={selectedRegion}
                   onChange={(e) => setSelectedRegion(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -145,12 +150,15 @@ export const Planning: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Usuarios Estimados
+                <label htmlFor="planning-estimatedUsers" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Usuarios estimados
                 </label>
                 <input
                   type="number"
-                  step="5000"
+                  min="1"
+                  max="2147483647"
+                  step="1"
+                  id="planning-estimatedUsers"
                   value={estimatedUsers}
                   onChange={(e) => setEstimatedUsers(parseInt(e.target.value) || 0)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -158,25 +166,24 @@ export const Planning: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Nivel Disponibilidad SLA
+                <label htmlFor="planning-availabilityLevel" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Disponibilidad objetivo
                 </label>
                 <select
+                  id="planning-availabilityLevel"
                   value={availabilityLevel}
                   onChange={(e) => setAvailabilityLevel(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="99.9% (Estándar Single-AZ)">99.9% (Estándar Single-AZ)</option>
-                  <option value="99.99% (Alta Disponibilidad Multi-AZ)">99.99% (Alta Disponibilidad Multi-AZ)</option>
-                  <option value="99.999% (Misión Crítica Multi-Region)">99.999% (Misión Crítica Multi-Region)</option>
+                  <option value="99.9% (Estándar Single-AZ)">99.9% · Single-AZ</option>
+                  <option value="99.99% (Alta Disponibilidad Multi-AZ)">99.99% · Alta disponibilidad Multi-AZ</option>
+                  <option value="99.999% (Misión Crítica Multi-Region)">99.999% · Multi-Region</option>
                 </select>
               </div>
             </div>
-
-            {/* Selección de Servicios Cloud */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                Servicios Cloud Seleccionados (Selecciona al menos uno)
+                Servicios AWS (mínimo uno)
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {INITIAL_AWS_SERVICES.map((srv) => {
@@ -202,71 +209,68 @@ export const Planning: React.FC = () => {
                 })}
               </div>
             </div>
-
-            {/* Objetivo de Migración */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Objetivo de la Migración
+              <label htmlFor="planning-migrationGoal" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Objetivo de la migración
               </label>
               <input
                 type="text"
-                value={migrationGoal}
+                id="planning-migrationGoal"
+                  value={migrationGoal}
                 onChange={(e) => setMigrationGoal(e.target.value)}
-                placeholder="Ej: Alta disponibilidad, reducción de latencia en Latinoamérica y cumplimiento..."
+                placeholder="Ej.: Alta disponibilidad y menor latencia"
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <button
               type="submit"
+              disabled={saving || proposalsLoading}
               className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-blue-600/30 flex items-center justify-center gap-2"
             >
-              <PlusCircle className="w-5 h-5" /> Registrar Propuesta Cloud
+              <PlusCircle className="w-5 h-5" /> {saving ? 'Guardando…' : 'Guardar propuesta'}
             </button>
           </form>
         </div>
-
-        {/* Sidebar Info & Best Practices */}
         <div className="space-y-6">
           <div className="bg-gradient-to-br from-blue-900 to-slate-900 text-white p-6 rounded-2xl shadow-md border border-blue-800">
             <div className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-wider mb-2">
-              <Sparkles className="w-4 h-4" /> Buenas Prácticas AWS
+              <Sparkles className="w-4 h-4" /> Criterios de diseño
             </div>
-            <h4 className="text-lg font-bold mb-2">Framework AWS Well-Architected</h4>
+            <h4 className="text-lg font-bold mb-2">AWS Well-Architected</h4>
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              Asegúrate de equilibrar los 6 pilares: Excelencia Operativa, Seguridad, Fiabilidad, Eficiencia en Rendimiento, Optimización de Costos y Sostenibilidad.
+              Operación, seguridad, fiabilidad, rendimiento, costos y sostenibilidad.
             </p>
             <div className="space-y-2 text-xs text-slate-300">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Multi-AZ activado por defecto
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Planificar Multi-AZ según disponibilidad
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Auto Scaling según demanda
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Cifrado de datos KMS
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Evaluar cifrado de datos con KMS
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Visualización de Propuestas Guardadas (Tabla / Cards) */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <Layers className="w-5 h-5 text-blue-600" /> Historial de Propuestas Registradas
+              <Layers className="w-5 h-5 text-blue-600" /> Propuestas guardadas
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Listado de arquitecturas planificadas y persistidas en almacenamiento local
+              Activa una propuesta para cargar su región y servicios.
             </p>
           </div>
           <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-            {proposals.length} Propuesta(s)
+            {proposals.length} propuestas
           </span>
         </div>
 
+        {!proposalsLoading && !proposals.length && <p className="text-sm text-slate-500 py-6">Aún no hay propuestas guardadas.</p>}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {proposals.map((prop) => (
             <div
@@ -287,6 +291,7 @@ export const Planning: React.FC = () => {
                 </span>
               </div>
 
+<button type="button" onClick={() => activateProposal(prop.id)} disabled={activeProposal?.id === prop.id} className="primary-button">{activeProposal?.id === prop.id ? 'Propuesta activa' : 'Activar propuesta'}</button>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 {prop.description}
               </p>
@@ -297,7 +302,7 @@ export const Planning: React.FC = () => {
                   <strong className="text-slate-700 dark:text-slate-200">{prop.selectedRegion}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">Usuarios Est.:</span>
+                  <span className="text-slate-400 block text-[10px]">Usuarios estimados:</span>
                   <strong className="text-slate-700 dark:text-slate-200">{prop.estimatedUsers.toLocaleString()}</strong>
                 </div>
                 <div className="col-span-2">
@@ -308,7 +313,7 @@ export const Planning: React.FC = () => {
 
               <div>
                 <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
-                  Servicios de la Arquitectura:
+                  Servicios incluidos:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {prop.selectedServices.map((srvId) => {

@@ -51,7 +51,13 @@ export interface GlobalRegion {
   name: string;
   location: string;
   flag: string;
-  latencyMs: number;
+  latencyMs: number | null;
+  country: string;
+  area: string;
+  latitude: number;
+  longitude: number;
+  azIds: string[];
+  optIn: boolean;
   status: 'Operativo' | 'Degradado' | 'Mantenimiento';
   deployedServices: string[];
   availabilityZones: number;

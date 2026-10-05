@@ -1,3 +1,5 @@
+import { useAuth } from '../context/AuthContext';
+import { errorMessage } from '../lib/supabase';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { GLOBAL_REGIONS } from '../data/awsServices';
@@ -22,6 +24,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const {
     activeTab,
+    setActiveTab,
     isDarkMode,
     toggleDarkMode,
     selectedRegion,
@@ -33,36 +36,40 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     addNotification
   } = useApp();
 
+  const { user, signOut } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+  const logout = async () => { setSigningOut(true); try { await signOut(); } catch (error) { addNotification('error', 'No se pudo cerrar sesión', errorMessage(error)); } finally { setSigningOut(false); } };
   const [showNotificationsMenu, setShowNotificationsMenu] = useState(false);
 
   const pageTitles: Record<string, { title: string; subtitle: string }> = {
+    admin: { title: 'Solicitudes de acceso', subtitle: 'Administración de CloudOps' },
     dashboard: {
-      title: 'Dashboard General',
-      subtitle: 'Resumen ejecutivo de la solución Cloud, arquitectura, costos y seguridad',
+      title: 'Dashboard',
+      subtitle: 'Resumen de arquitectura, costos y seguridad',
     },
     planning: {
       title: 'Planificación Cloud',
-      subtitle: 'Formulario de registro y propuesta de solución de infraestructura en AWS',
+      subtitle: 'Propuestas y requisitos de arquitectura',
     },
     costs: {
-      title: 'Costos y Economía Cloud',
-      subtitle: 'Calculadora dinámica de estimación mensual, anual y exportación de reportes',
+      title: 'Costos',
+      subtitle: 'Presupuesto mensual y proyección anual',
     },
     infrastructure: {
-      title: 'Infraestructura Global AWS',
-      subtitle: 'Visualización de regiones en el Mapa Mundial, zonas de disponibilidad y estado de red',
+      title: 'Infraestructura global',
+      subtitle: 'Regiones, zonas de disponibilidad y latencia',
     },
     security: {
-      title: 'Seguridad e Identidades (IAM)',
-      subtitle: 'Modelo de responsabilidad compartida, auditoría y administración IAM',
+      title: 'Seguridad e IAM',
+      subtitle: 'Gestión de accesos, controles y cumplimiento',
     },
     network: {
-      title: 'Arquitectura de Red Cloud',
-      subtitle: 'Diagrama interactivo de tráfico desde Internet, Route 53, CloudFront y VPC',
+      title: 'Arquitectura de red',
+      subtitle: 'Conexiones y subredes de la arquitectura',
     },
     services: {
-      title: 'Catálogo de Servicios AWS',
-      subtitle: 'Explorador de componentes, filtrado por categorías y detalles técnicos',
+      title: 'Servicios AWS',
+      subtitle: 'Servicios disponibles para la arquitectura',
     },
   };
 
@@ -74,13 +81,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors">
-      <div className="px-4 lg:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Left Title & Mobile Menu button */}
+      <div className="px-4 lg:px-8 py-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleSidebar}
             className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-            aria-label="Abrir Menú"
+            aria-label="Abrir menú"
           >
             <Menu className="w-6 h-6" />
           </button>
@@ -93,13 +99,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </p>
           </div>
         </div>
-
-        {/* Right Tools */}
         <div className="flex items-center flex-wrap gap-3">
-          {/* Global Search Bar */}
           <div className="relative flex-1 md:w-56">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
+              aria-label="Buscar servicio AWS"
+              onKeyDown={e => { if (e.key === 'Enter') setActiveTab('services'); }}
               type="text"
               placeholder="Buscar servicio AWS..."
               value={globalSearch}
@@ -107,15 +112,14 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
           </div>
-
-          {/* Region Selector */}
           <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs">
             <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <select
+              aria-label="Región activa"
               value={selectedRegion}
               onChange={(e) => {
                 setSelectedRegion(e.target.value);
-                addNotification('info', 'Cambio de Región', `Región activa cambiada a ${e.target.value}`);
+                addNotification('info', 'Región actualizada', `Región activa: ${e.target.value}`);
               }}
               className="bg-transparent text-slate-700 dark:text-slate-200 font-semibold focus:outline-none cursor-pointer"
             >
@@ -126,22 +130,18 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               ))}
             </select>
           </div>
-
-          {/* Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
             className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer"
-            title={isDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+            title={isDarkMode ? 'Activar modo claro' : 'Activar modo oscuro'}
           >
             {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
           </button>
-
-          {/* Notifications Bell Dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowNotificationsMenu(prev => !prev)}
               className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer relative"
-              title="Ver Notificaciones del Sistema"
+              title="Ver notificaciones"
             >
               <Bell className="w-4 h-4" />
               {notifications.length > 0 && (
@@ -150,13 +150,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 </span>
               )}
             </button>
-
-            {/* Notifications Menu Popup */}
             {showNotificationsMenu && (
-              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 p-4 space-y-3 animate-fade-in">
+              <div className="fixed right-4 top-28 mt-2 w-[min(320px,calc(100vw-2rem))] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 p-4 space-y-3 animate-fade-in">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
                   <h4 className="font-bold text-xs text-slate-800 dark:text-white flex items-center gap-1.5">
-                    <Bell className="w-3.5 h-3.5 text-blue-500" /> Notificaciones Recientes
+                    <Bell className="w-3.5 h-3.5 text-blue-500" /> Notificaciones
                   </h4>
                   <button
                     onClick={() => setShowNotificationsMenu(false)}
@@ -191,17 +189,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               </div>
             )}
           </div>
-
-          {/* Global AWS Health Badge (Interactive) */}
-          <button
-            onClick={handleAwsStatusClick}
-            className="hidden xl:flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:hover:bg-emerald-950 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs font-semibold cursor-pointer transition-colors"
-          >
-            <Cloud className="w-4 h-4 text-emerald-500" />
-            <span>AWS Status: Normal</span>
-          </button>
         </div>
       </div>
+      <div className="px-4 lg:px-8 pb-3 flex flex-wrap justify-end items-center gap-3 text-xs"><span className="text-slate-500 break-all">{user?.email}</span><span className="text-green-600 font-semibold">Sesión activa</span><button disabled={signingOut} onClick={logout} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800">{signingOut ? 'Cerrando…' : 'Cerrar sesión'}</button></div>
     </header>
   );
 };

@@ -46,33 +46,29 @@ export const Services: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header Banner */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
-              <Server className="w-4 h-4" /> Catálogo Completo de Servicios AWS
+              <Server className="w-4 h-4" /> Catálogo AWS
             </span>
             <h2 className="text-2xl font-extrabold text-slate-800 dark:text-white">
-              Explorador y Selector de Componentes Cloud
+              Servicios para la arquitectura
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl">
-              Filtra y explora los servicios clave de Amazon Web Services para incluirlos o quitarlos de la arquitectura. Haz clic en "Seleccionado" para desmarcar.
+              Consulta servicios AWS y agrégalos al presupuesto.
             </p>
           </div>
 
           <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/60 px-4 py-2.5 rounded-xl border border-blue-100 dark:border-blue-900 text-xs font-semibold text-blue-900 dark:text-blue-300">
             <Sparkles className="w-4 h-4 text-blue-600" />
-            <span>{INITIAL_AWS_SERVICES.length} Servicios Disponibles</span>
+            <span>{INITIAL_AWS_SERVICES.length} Servicios disponibles</span>
           </div>
         </div>
       </div>
-
-      {/* Filter and Search Controls */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 scrollbar-none">
+          <div className="flex flex-wrap items-center gap-2 w-full min-w-0 pb-1 scrollbar-none">
             <Filter className="w-4 h-4 text-slate-400 shrink-0 hidden sm:block" />
             {categories.map((cat) => (
               <button
@@ -88,13 +84,12 @@ export const Services: React.FC = () => {
               </button>
             ))}
           </div>
-
-          {/* Search Bar Input */}
           <div className="relative w-full md:w-64">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
+              aria-label="Filtrar servicios AWS"
               type="text"
-              placeholder="Filtrar por nombre o palabra clave..."
+              placeholder="Buscar por nombre o función"
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -102,8 +97,6 @@ export const Services: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Grid of ServiceCards */}
       {filteredServices.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredServices.map((service) => {
@@ -126,13 +119,13 @@ export const Services: React.FC = () => {
             No se encontraron servicios
           </h4>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            Intenta cambiar el término de búsqueda "{globalSearch}" o selecciona otra categoría.
+            Prueba otra búsqueda en lugar de "{globalSearch}" o selecciona otra categoría.
           </p>
           <button
             onClick={() => { setGlobalSearch(''); setSelectedCategory('Todas'); }}
             className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
           >
-            Limpiar Filtros
+            Limpiar filtros
           </button>
         </div>
       )}

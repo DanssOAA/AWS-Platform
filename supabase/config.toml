@@ -1,0 +1,19 @@
+project_id = "cloudops-dashboard"
+
+[functions.cloudops-auth]
+# El usuario todavía no tiene JWT. La función valida el acceso del lado servidor.
+verify_jwt = false
+entrypoint = "./functions/cloudops-auth/index.ts"
+
+[functions.cloudops-request-access]
+verify_jwt = false
+entrypoint = "./functions/cloudops-request-access/index.ts"
+
+[functions.cloudops-manage-access]
+# JWT and cloudops_role are verified by the handler using auth.getUser.
+verify_jwt = false
+entrypoint = "./functions/cloudops-manage-access/index.ts"
+
+[functions.cloudops-request-otp]
+verify_jwt = false
+entrypoint = "./functions/cloudops-request-otp/index.ts"
