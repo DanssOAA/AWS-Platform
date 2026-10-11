@@ -1,4 +1,3 @@
-import { userMessage } from './lib/uiMessages';
 import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -6,12 +5,16 @@ import { ProtectedRoute } from './routes/ProtectedRoute';
 import { Login } from './pages/Login';
 import { RequestAccess } from './pages/RequestAccess';
 import { AdminRoute } from './routes/AdminRoute';
-import { CloudAssistant } from './components/CloudAssistant';
+import { ProjectAssistant } from './components/ProjectAssistant';
 import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { ServiceDetailModal } from './components/ServiceDetailModal';
 import { ToastNotification } from './components/ToastNotification';
+import { ProjectWorkspaceProvider } from './context/ProjectWorkspaceContext';
+import { AnalyzedAppProvider } from './context/AnalyzedAppProvider';
+import { ProjectAnalysisSupplement } from './components/ProjectAnalysisSupplement';
+import { ServiceDetailModal } from './components/ServiceDetailModal';
+import { ProjectSwitcher } from './components/ProjectSwitcher';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
 const Planning = lazy(() => import('./pages/Planning').then(module => ({ default: module.Planning })));
@@ -21,9 +24,10 @@ const Security = lazy(() => import('./pages/Security').then(module => ({ default
 const NetworkPage = lazy(() => import('./pages/Network').then(module => ({ default: module.NetworkPage })));
 const Services = lazy(() => import('./pages/Services').then(module => ({ default: module.Services })));
 const AccessRequests = lazy(() => import('./pages/admin/AccessRequests').then(module => ({ default: module.AccessRequests })));
+const Projects = lazy(() => import('./pages/Projects').then(module => ({ default: module.Projects })));
 
 const MainLayout: React.FC = () => {
-  const { proposalsError, proposalsLoading, loadProposals } = useApp();
+  const { activeTab } = useApp();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -33,25 +37,24 @@ const MainLayout: React.FC = () => {
         <Header onToggleSidebar={() => setIsSidebarOpen(true)} />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          {proposalsLoading && <p role="status" className="mb-4 text-sm">Cargando propuestas…</p>}
-          {proposalsError && <div role="alert" className="error-box mb-4">{userMessage(proposalsError, 'proposals')} <button className="underline" onClick={() => void loadProposals()}>Reintentar</button></div>}
+          {activeTab !== 'admin' && <><ProjectSwitcher /><ProjectAnalysisSupplement /></>}
           <Suspense fallback={<p role="status" className="py-10 text-center">Cargando módulo…</p>}><Outlet /></Suspense>
         </main>
 
         <footer className="py-4 px-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
-          CloudOps &copy; 2026 · Entorno de simulación
+          CloudOps &copy; 2026 · Proyectos y análisis guardados en Supabase
         </footer>
       </div>
-      <ServiceDetailModal />
       <ToastNotification />
-      <CloudAssistant />
+      <ProjectAssistant />
+      <ServiceDetailModal />
     </div>
   );
 };
 
 function Workspace() {
   const { user } = useAuth();
-  return <AppProvider key={user!.id}><MainLayout /></AppProvider>;
+  return <AppProvider key={user!.id} projectMode><ProjectWorkspaceProvider><AnalyzedAppProvider><MainLayout /></AnalyzedAppProvider></ProjectWorkspaceProvider></AppProvider>;
 }
 
 export default function App() {
@@ -61,6 +64,7 @@ export default function App() {
     <Route element={<ProtectedRoute />}><Route element={<Workspace />}>
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/planning" element={<Planning />} />
+      <Route path="/projects" element={<Projects />} />
       <Route path="/costs" element={<Costs />} />
       <Route path="/infrastructure" element={<Infrastructure />} />
       <Route path="/security" element={<Security />} />

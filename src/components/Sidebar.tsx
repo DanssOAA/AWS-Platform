@@ -26,6 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'projects', label: 'Análisis de proyectos', icon: FileSpreadsheet },
     { id: 'planning', label: 'Planificación', icon: FileSpreadsheet },
     { id: 'costs', label: 'Costos', icon: DollarSign },
     { id: 'infrastructure', label: 'Infraestructura global', icon: Globe },

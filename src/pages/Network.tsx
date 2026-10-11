@@ -1,4 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useOptionalProjectWorkspace } from '../context/ProjectWorkspaceContext';
+import { projectModuleData } from '../lib/projectModuleData';
+import { projectAction } from '../lib/projectAnalysis';
+import { designFromFlow } from '../lib/projectNetworkFlow';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, CheckCircle2, Network, Globe, Layers, Server, Database, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -20,17 +24,26 @@ const nodes: Node[] = [
 ];
 const icons = { internet: Globe, route53: Network, cloudfront: Zap, vpc: Layers, ec2: Server, rds: Database };
 export function NetworkPage() {
+  const workspace = useOptionalProjectWorkspace();
+  const baseSeed = useMemo(() => workspace?.project && workspace.run && workspace.detail ? projectModuleData(workspace.project,workspace.run,workspace.detail).design : undefined, [workspace?.project,workspace?.run,workspace?.detail]);
+  const seed = useMemo(() => baseSeed && workspace?.run?.architecture_flow ? designFromFlow(baseSeed,workspace.run.architecture_flow) : baseSeed, [baseSeed,workspace?.run?.architecture_flow]);
+  async function generateFlow() {
+    if (!workspace?.project || !workspace.run || !baseSeed) throw new Error('Selecciona un proyecto con análisis completado.');
+    const result = await projectAction({action:'architecture',projectId:workspace.project.id,analysisId:workspace.run.id});
+    if (!result.flow) throw new Error('No se recibió el flujo del proyecto.');
+    return designFromFlow(baseSeed,result.flow);
+  }
   const [view, setView] = useState<'custom' | 'reference'>('custom');
   return <ExpandablePanel label="editor de red">{(controls, expanded) => <div className="space-y-5">
     <section className="panel flex flex-wrap items-center justify-between gap-4">
-      <div><h2 className="text-xl font-bold">Diseñador de red</h2><p className="mt-2 text-sm text-slate-500">Tu borrador es independiente de la propuesta y sus costos.</p></div>
+      <div><h2 className="text-xl font-bold">Diseñador de red</h2><p className="mt-2 text-sm text-slate-500">Genera las conexiones desde los requisitos y servicios de tu proyecto, y recorre su funcionamiento paso a paso. El flujo propuesto se guarda en Supabase; tus ajustes del lienzo se conservan en este navegador.</p></div>
       {controls}
       <div className="flex w-full flex-wrap gap-2" aria-label="Vista de red">
         <button className="editor-control" aria-pressed={view === 'custom'} onClick={() => setView('custom')}>Mi red</button>
         <button className="editor-control" aria-pressed={view === 'reference'} onClick={() => setView('reference')}>Arquitectura de referencia</button>
       </div>
     </section>
-    <div hidden={view !== 'custom'}><NetworkEditor expanded={expanded} /></div>
+    <div hidden={view !== 'custom'}><NetworkEditor key={workspace?.run?.id ?? "legacy"} expanded={expanded} seed={seed} onGenerateFlow={baseSeed?.nodes.length ? generateFlow : undefined} storageKey={workspace?.project ? `cloudops.network-draft.${workspace.project.id}.${workspace.run?.id ?? "pending"}` : undefined} /></div>
     {view === 'reference' && <ReferenceNetwork />}
   </div>}</ExpandablePanel>;
 }

@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const {
+  const { dashboardCleared, analyzedProject, analysisScore, serviceCatalog = INITIAL_AWS_SERVICES,
     activeProposal,
     architectureServices,
     securityChecks,
@@ -63,7 +63,7 @@ export const Dashboard: React.FC = () => {
 
   const greenCount = securityChecks.filter(s => s.status === 'green').length;
   const totalChecks = securityChecks.length;
-  const securityScorePercentage = Math.round((greenCount / totalChecks) * 100);
+  const securityScorePercentage = (analyzedProject ? analysisScore : totalChecks ? Math.round((greenCount / totalChecks) * 100) : null);
 
   const handleToggleService = (service: AWSService) => {
     const existing = costEstimates.find(c => c.serviceId === service.id);
@@ -98,12 +98,13 @@ export const Dashboard: React.FC = () => {
           <button
             onClick={resetDefaultData}
             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-            title="Restaurar datos iniciales"
+            title="Recargar datos del análisis"
           >
             <RotateCcw className="w-4 h-4 text-blue-500" /> Restaurar datos
           </button>
         </div>
       </div>
+      {dashboardCleared ? <section className="panel text-center space-y-3" role="status"><h2 className="text-xl font-bold">Dashboard vacío</h2><p>El análisis de tu proyecto sigue guardado. Pulsa «Restaurar datos» para recuperar sus indicadores, gráficos y servicios.</p><button className="primary-button" onClick={resetDefaultData}>Restaurar desde el análisis</button></section> : <>
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 rounded-2xl p-6 lg:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -128,7 +129,7 @@ export const Dashboard: React.FC = () => {
                 <Cpu className="w-4 h-4 text-emerald-400" /> Disponibilidad objetivo: <strong>{activeProposal?.availabilityLevel || 'Sin definir'}</strong>
               </span>
               <span className="flex items-center gap-1.5">
-                <CheckCircle className="w-4 h-4 text-amber-400" /> Usuarios: <strong>{(activeProposal?.estimatedUsers || 0).toLocaleString()} est.</strong>
+                <CheckCircle className="w-4 h-4 text-amber-400" /> Usuarios: <strong>{activeProposal?.estimatedUsers ? activeProposal.estimatedUsers.toLocaleString() + ' est.' : 'Por definir'}</strong>
               </span>
             </div>
           </div>
@@ -156,7 +157,7 @@ export const Dashboard: React.FC = () => {
           subtitle="Servicios de la arquitectura"
           icon="Server"
           color="text-blue-600"
-          badgeText={activeServicesCount > 0 ? `${activeServicesCount} activos` : 'Sin servicios'}
+          badgeText={activeServicesCount > 0 ? `${activeServicesCount} propuestos` : 'Sin servicios'}
           badgeType={activeServicesCount > 0 ? 'info' : 'warning'}
         />
         <StatCard
@@ -170,21 +171,21 @@ export const Dashboard: React.FC = () => {
         />
         <StatCard
           title="Costo mensual estimado"
-          value={`$${totalMonthlyCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
-          subtitle={`Costo anual: $${totalAnnualCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+          value={costEstimates.length ? `$${totalMonthlyCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Pendiente'}
+          subtitle={costEstimates.length ? `Proyección anual del escenario: $${totalAnnualCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Sin importes estimados todavía'}
           icon="DollarSign"
           color="text-amber-500"
-          badgeText={totalMonthlyCost > 0 ? 'Estimación' : '$0.00 USD'}
+          badgeText={costEstimates.length < activeServicesCount ? 'Estimación parcial' : 'Estimación'}
           badgeType={totalMonthlyCost > 0 ? 'warning' : 'info'}
         />
         <StatCard
           title="Controles de seguridad"
-          value={`${securityScorePercentage}%`}
-          subtitle={`${greenCount} de ${totalChecks} controles aprobados`}
+          value={securityScorePercentage == null ? 'Sin evaluar' : `${securityScorePercentage}%`}
+          subtitle={`${greenCount} de ${totalChecks} hallazgos resueltos o descartados`}
           icon="ShieldCheck"
           color="text-emerald-600"
-          badgeText={securityScorePercentage >= 80 ? 'Correcto' : 'Revisar'}
-          badgeType={securityScorePercentage >= 80 ? 'success' : 'warning'}
+          badgeText={(securityScorePercentage ?? 0) >= 80 ? 'Correcto' : 'Revisar'}
+          badgeType={(securityScorePercentage ?? 0) >= 80 ? 'success' : 'warning'}
         />
       </div>
 
@@ -247,7 +248,7 @@ export const Dashboard: React.FC = () => {
                 onClick={resetDefaultData}
                 className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                <RotateCcw className="w-4 h-4" /> Restaurar datos iniciales
+                <RotateCcw className="w-4 h-4" /> Recargar datos del análisis
               </button>
             </div>
           )}
@@ -302,12 +303,12 @@ export const Dashboard: React.FC = () => {
             onClick={() => setActiveTab('services')}
             className="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 cursor-pointer"
           >
-            Ver catálogo ({INITIAL_AWS_SERVICES.length}) <ArrowRight className="w-3.5 h-3.5" />
+            Ver catálogo ({serviceCatalog.length}) <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {INITIAL_AWS_SERVICES.slice(0, 4).map((service) => {
+          {serviceCatalog.slice(0, 4).map((service) => {
             const isAdded = costEstimates.some(c => c.serviceId === service.id);
             return (
               <ServiceCard
@@ -321,6 +322,7 @@ export const Dashboard: React.FC = () => {
           })}
         </div>
       </div>
+      </>}
       {showConfirmClearModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
@@ -333,7 +335,7 @@ export const Dashboard: React.FC = () => {
                   ¿Vaciar el dashboard?
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Se vaciará el presupuesto y se desactivará la propuesta actual.
+                  Se vaciará esta vista y su presupuesto. El análisis guardado se conserva y puedes recuperarlo con «Restaurar datos».
                 </p>
               </div>
             </div>

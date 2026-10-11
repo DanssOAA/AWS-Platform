@@ -4,7 +4,7 @@
 
 Aplicación académica para planificar una arquitectura AWS, estimar costos y explicar decisiones de seguridad, disponibilidad y redes. Conserva el proyecto React + TypeScript + Vite existente. Supabase es el único backend; no se incorpora una API Express, Node o .NET.
 
-Los recursos AWS, identidades IAM, latencias y tarifas son simulaciones educativas. Las propuestas y escenarios guardados utilizan datos reales de Supabase. El asistente consulta la Edge Function existente; no genera respuestas simuladas cuando falla Gemini.
+Los módulos originales, gráficos, mapa, formulario y editor de red se conservan y se alimentan del último análisis completado del proyecto seleccionado. Requisitos, hallazgos y servicios AWS provienen de Gemini y de las fuentes importadas. Los costos son rangos orientativos con supuestos guardados en Supabase; las recomendaciones no equivalen a recursos desplegados. IAM, latencias y métricas sin conexión aparecen sin datos.
 
 ## Situación problemática
 
@@ -12,11 +12,11 @@ La planificación de una solución Cloud suele fragmentarse entre formularios, c
 
 ## Objetivo
 
-Centralizar la planificación y el análisis de una arquitectura web en una interfaz comprensible, con sesiones reales, persistencia por usuario y evaluación local de sus decisiones.
+Centralizar requisitos, seguridad y propuesta AWS de cada proyecto, con sesiones reales, persistencia por usuario y trazabilidad hacia las fuentes analizadas.
 
 ## Solución propuesta
 
-Un espacio de trabajo con una propuesta activa, presupuesto editable, diagrama de tres capas, controles de seguridad y asistencia educativa con IA. Cada usuario consulta sus propuestas mediante políticas RLS de Supabase.
+Un espacio de trabajo con un proyecto activo compartido por todos los módulos. Al completar el análisis se actualizan Dashboard, Planificación, Costos, Infraestructura, Seguridad, Red y Servicios. Las tareas y consultas del asistente se guardan por usuario, proyecto y análisis con RLS.
 
 ## Tecnologías
 
@@ -32,33 +32,36 @@ React + React Router
   ├─ Admin → cloudops-manage-access → alta administrada / aprobación → OTP
   ├─ Login (código) → auth.verifyOtp({ email, token, type: 'email' })
   ├─ AuthContext → getSession / onAuthStateChange → ProtectedRoute
-  ├─ AppContext → propuestas / presupuesto / controles del escenario
-  ├─ Supabase Data API + RLS → cloudops_proposals / cloudops_cost_snapshots
-  ├─ ArchitectureScore → reglas locales, sin IA
-  └─ CloudAssistant → cloud-assistant → Gemini
+  ├─ ProjectWorkspaceProvider → proyecto activo + último análisis completado
+  ├─ /projects → cloudops-analyze-project → fuentes → Gemini → resultado transaccional
+  ├─ Supabase Data API + RLS → requisitos / hallazgos / recomendaciones / tareas
+  ├─ AnalyzedAppProvider → adapta el resultado guardado a las siete vistas originales
+  ├─ PDF técnico → requisitos, AWS, costos, seguridad, plan y evidencias
+  └─ ProjectAssistant → cloudops-analyze-project (assist) → contexto de BD → Gemini → conversación guardada
 ```
 
-La URL es la fuente de navegación. Al actualizar una ruta se restaura la sesión. El escenario de trabajo (costos, controles, región y propuesta seleccionada) se conserva como caché local independiente por `user.id`; las propuestas se vuelven a consultar en Supabase. El historial de propuestas y los escenarios guardados se almacenan en la base de datos. Cambiar de usuario desmonta el estado anterior.
+La URL es la fuente de navegación. Al actualizar una ruta se restaura la sesión y se recuperan los datos desde Supabase. Solo la preferencia de proyecto activo y el tema se recuerdan en el navegador. Cambiar de usuario desmonta el estado anterior; cambiar de proyecto descarta respuestas tardías del anterior.
 
-Seleccionar una propuesta recupera su región y crea un presupuesto inicial con sus servicios. Editar el presupuesto no modifica la propuesta registrada: permite explorar alternativas de costos. Vaciar el dashboard desactiva la propuesta y limpia el presupuesto, conservando el historial. Restaurar datos carga el ejemplo académico sin sobrescribir propuestas guardadas.
+El último análisis completado alimenta todos los módulos automáticamente. Si un nuevo intento falla, se conserva el resultado anterior y se indica en pantalla. Si todavía no existe uno completado, se muestra un estado pendiente. El seguimiento de tareas es personal y no cambia la evaluación de seguridad.
 
 ## Módulos y cómo probarlos
 
 | Módulo | Ruta / acción | Resultado esperado |
 | --- | --- | --- |
 | Login | `/login`, solicitar código e ingresar el recibido | Solicita mediante `cloudops-request-otp` y verifica con Supabase Auth. El paso del código aparece solo tras `success: true`; conserva el formulario ante errores. |
-| Dashboard | `/dashboard` | Propuesta activa, región del escenario, usuarios estimados, disponibilidad objetivo, servicios, costos y controles. |
-| Planificación Cloud | `/planning`, completar y registrar | Inserta `user_id` y los campos de la propuesta en Supabase. El historial se recupera al actualizar; «Activar propuesta» actualiza el escenario. |
-| Costos | `/costs`, cambiar cantidad y horas | Recalcula mensual/anual y distribución; IAM/VPC conservan tarifa base cero. «Guardar escenario» inserta el JSON del presupuesto. Se conserva exportación CSV. |
-| Infraestructura Global | `/infrastructure`, seleccionar región | Cambia región y muestra ubicación y servicios planificados. Catálogo de 34 regiones AWS, mapa con enlaces discontinuos animados, zoom, filtros y detalle de zonas de disponibilidad. No despliega recursos. |
-| Seguridad | `/security`, alternar MFA, cifrado, base privada y cumplimiento | Cambian indicadores y score. Rotar claves es una simulación explícita. |
-| Arquitectura de Red | `/network`, seleccionar elementos | Detalle de Internet, Route 53, CloudFront, VPC, ALB, EC2, RDS y las tres subredes. La simulación señala componentes ausentes. |
-| Servicios AWS | `/services`, buscar y filtrar | Catálogo con función, categoría, detalles y estado en el presupuesto; permite agregar o quitar servicios. |
-| Asistente Cloud IA | Botón flotante, elegir enfoque o escribir pregunta | Invoca `cloud-assistant` con región, propuesta, servicios, costos, seguridad y red. Muestra análisis, score, riesgo, recomendaciones y explicación, o el error recibido. |
+| Análisis de proyectos | `/projects` | Importa fuentes y guarda el análisis; al completarlo actualiza el contexto de todos los módulos. |
+| Dashboard | `/dashboard` | Resumen guardado, seguridad estimada, requisitos, hallazgos y propuesta AWS del proyecto. |
+| Planificación Cloud | `/planning` | Plan derivado de los requisitos, hallazgos y servicios. Las marcas se confirman tras guardarse en Supabase. |
+| Costos | `/costs` | Barras, tarjetas, simulador y CSV originales con rangos de IA; los gráficos usan el punto medio. Escenarios guardados con proyecto/análisis. |
+| Infraestructura Global | `/infrastructure` | Región, disponibilidad, requisitos y configuraciones propuestas del análisis. No declara despliegues ni latencias medidas. |
+| Seguridad | `/security` | Hallazgos guardados, evidencias, severidad y correcciones. No usa IAM de ejemplo. |
+| Arquitectura de Red | `/network` | Editor original con los servicios recomendados, importar/exportar y borradores por proyecto; las conexiones se diseñan explícitamente. |
+| Servicios AWS | `/services` | Servicios específicos recomendados, justificación, configuración, requisitos y supuestos. |
+| Asistente Cloud IA | Botón flotante | Consulta con proyecto/análisis; el servidor carga el contexto de BD y guarda la respuesta en ese proyecto. |
 | Navegación / sesión | F5 en `/costs`, luego cerrar sesión | Conserva ruta con sesión; sin sesión las rutas protegidas llevan a `/login`. |
 | Responsive / tema | Probar 390, 768 y 1440 px; alternar tema | Sidebar móvil desplegable, formularios y tarjetas adaptables; tema persistente. Requiere comprobación visual en navegador. |
 
-La puntuación local utiliza diez reglas de igual peso para una arquitectura web de tres capas: VPC, Route 53, CloudFront, EC2, RDS, alta disponibilidad, MFA, cifrado, base privada y cobertura del presupuesto. No equivale a una certificación ni al score que devuelve Gemini.
+La puntuación visible procede del análisis guardado; un valor nulo se muestra «Sin evaluar». No certifica seguridad ni se modifica al marcar tareas.
 
 ## Autenticación OTP y compatibilidad con FaceIA
 
@@ -95,6 +98,8 @@ Referencia oficial: [verificación OTP de Supabase](https://supabase.com/docs/re
 La implementación anterior `supabase/functions/cloudops-auth` se conserva como código histórico y no es invocada por el login actual. Sus secretos de código compartido no son requisitos del flujo OTP. La migración del contador también protege las nuevas solicitudes públicas. No desplegarla como solución al bloqueo de altas de FaceIA.
 
 ## Base de datos Supabase
+
+El módulo **Análisis de proyectos** está implementado en `/projects` y alimenta toda la aplicación. Sus once tablas y operaciones transaccionales ya están aplicadas; `cloudops-analyze-project` está desplegada en versión 6. La conexión es **DanssOAA's Project**, ref `nwpzaqzzrpwncpdanxbx`, región `us-west-2`, base PostgreSQL `postgres`. Se confirmó un análisis real completado en localhost con 10 requisitos, 6 hallazgos y 9 servicios. Consulta el [alcance, pruebas y comandos de Supabase](docs/project-analysis-database.md). El frontend no se publicó en Vercel. Las propuestas anteriores siguen disponibles y los escenarios de costos se guardan asociados al proyecto y análisis.
 
 | Tabla | Uso |
 | --- | --- |
@@ -166,7 +171,7 @@ Referencias oficiales: [creación administrativa de usuarios](https://supabase.c
 
 ### Asistente Gemini
 
-La función `cloud-assistant` ya existe. Requiere `GEMINI_API_KEY` en sus secretos y un origen permitido por su CORS. El frontend no contiene la clave de Gemini. Si cambia el dominio de Vercel, actualizar también la lista de orígenes de esa función. No se ha confirmado una respuesta real de Gemini con una sesión de demostración en esta entrega.
+El asistente activo usa `cloudops-analyze-project` con la acción `assist`. Requiere `GEMINI_API_KEY` y un origen incluido en `CLOUDOPS_ALLOWED_ORIGINS`. El servidor valida propietario, proyecto y análisis completado, consulta el contexto guardado y persiste la respuesta en `cloudops_project_conversations`. El frontend nunca contiene la clave. La función anterior `cloud-assistant` se conserva y no es invocada por las rutas activas. Se confirmó un análisis real de Gemini; la nueva conversación contextual está verificada con pruebas controladas, pendiente de una consulta real del usuario.
 
 ## Build y pruebas
 
@@ -215,7 +220,7 @@ Rutas previstas para capturas reales, pendientes de tomar tras completar la conf
 
 **Nuevo flujo de acceso:** `src/pages/RequestAccess.tsx`, `src/pages/admin/AccessRequests.tsx`, `src/routes/AdminRoute.tsx`, `src/lib/accessRequests.ts`, funciones `cloudops-request-access` / `cloudops-manage-access`, lógica compartida en `supabase/functions/_shared`, migración de solicitudes y pruebas de páginas, handlers y adaptador de Auth.
 
-## Mapa de infraestructura
+## Mapa de infraestructura anterior (componente conservado fuera de las rutas activas)
 
 El mapa usa las 34 regiones de la partición AWS estándar, compartidas con los selectores de región de la aplicación. `src/data/awsRegions.ts` incluye códigos, área geográfica, requisitos de activación y AZ IDs. Fuentes revisadas el 5 de octubre de 2026: [regiones AWS](https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions.html) y [zonas de disponibilidad](https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-availability-zones.html). La tabla detallada de AZ IDs enumera cuatro zonas para Londres, aunque la tabla general de regiones todavía muestra tres; el detalle de zonas es la fuente utilizada aquí. Las cuentas nuevas pueden tener restricciones en California. China, GovCloud y European Sovereign Cloud quedan fuera de este catálogo.
 

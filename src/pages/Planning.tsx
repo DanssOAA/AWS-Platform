@@ -15,18 +15,18 @@ import {
 } from 'lucide-react';
 
 export const Planning: React.FC = () => {
-  const { proposals, addProposal, setSelectedServiceModal, activeProposal, activateProposal, proposalsLoading } = useApp();
+  const { serviceCatalog = INITIAL_AWS_SERVICES, proposals, addProposal, setSelectedServiceModal, activeProposal, activateProposal, proposalsLoading } = useApp();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const [solutionName, setSolutionName] = useState('');
-  const [appType, setAppType] = useState('Aplicación Web SPA + API REST');
-  const [description, setDescription] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('us-east-1');
-  const [estimatedUsers, setEstimatedUsers] = useState(100000);
-  const [availabilityLevel, setAvailabilityLevel] = useState('99.99% (Alta Disponibilidad Multi-AZ)');
-  const [selectedServices, setSelectedServices] = useState<string[]>(['ec2', 's3', 'rds', 'vpc']);
-  const [migrationGoal, setMigrationGoal] = useState('Escalabilidad global, seguridad y reducción de costos de infraestructura física.');
+  const [solutionName, setSolutionName] = useState(activeProposal?.solutionName ?? '');
+  const [appType, setAppType] = useState(activeProposal?.appType ?? 'Aplicación Web SPA + API REST');
+  const [description, setDescription] = useState(activeProposal?.description ?? '');
+  const [selectedRegion, setSelectedRegion] = useState(activeProposal?.selectedRegion ?? 'us-east-1');
+  const [estimatedUsers, setEstimatedUsers] = useState(activeProposal?.estimatedUsers ?? 0);
+  const [availabilityLevel, setAvailabilityLevel] = useState(activeProposal?.availabilityLevel ?? 'Por definir');
+  const [selectedServices, setSelectedServices] = useState<string[]>(activeProposal?.selectedServices ?? []);
+  const [migrationGoal, setMigrationGoal] = useState(activeProposal?.migrationGoal ?? '');
 
   const toggleServiceSelection = (serviceId: string) => {
     setSelectedServices(prev =>
@@ -108,6 +108,7 @@ export const Planning: React.FC = () => {
                   onChange={(e) => setAppType(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
+                  {activeProposal && <option value={activeProposal.appType}>{activeProposal.appType}</option>}
                   <option value="Aplicación Web SPA + API REST">Aplicación web y API REST</option>
                   <option value="Plataforma E-Commerce Enterprise">Comercio electrónico</option>
                   <option value="Arquitectura de Microservicios Serverless">Microservicios serverless</option>
@@ -175,6 +176,7 @@ export const Planning: React.FC = () => {
                   onChange={(e) => setAvailabilityLevel(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
+                  {activeProposal && <option value={activeProposal.availabilityLevel}>{activeProposal.availabilityLevel}</option>}
                   <option value="99.9% (Estándar Single-AZ)">99.9% · Single-AZ</option>
                   <option value="99.99% (Alta Disponibilidad Multi-AZ)">99.99% · Alta disponibilidad Multi-AZ</option>
                   <option value="99.999% (Misión Crítica Multi-Region)">99.999% · Multi-Region</option>
@@ -186,7 +188,7 @@ export const Planning: React.FC = () => {
                 Servicios AWS (mínimo uno)
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {INITIAL_AWS_SERVICES.map((srv) => {
+                {serviceCatalog.map((srv) => {
                   const isChecked = selectedServices.includes(srv.id);
                   return (
                     <button
@@ -281,7 +283,7 @@ export const Planning: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[10px]">Usuarios estimados:</span>
-                  <strong className="text-slate-700 dark:text-slate-200">{prop.estimatedUsers.toLocaleString()}</strong>
+                  <strong className="text-slate-700 dark:text-slate-200">{prop.estimatedUsers ? prop.estimatedUsers.toLocaleString() : 'Por definir'}</strong>
                 </div>
                 <div className="col-span-2">
                   <span className="text-slate-400 block text-[10px]">Objetivo:</span>
@@ -295,7 +297,7 @@ export const Planning: React.FC = () => {
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {prop.selectedServices.map((srvId) => {
-                    const srv = INITIAL_AWS_SERVICES.find(s => s.id === srvId);
+                    const srv = serviceCatalog.find(s => s.id === srvId);
                     return (
                       <button
                         key={srvId}

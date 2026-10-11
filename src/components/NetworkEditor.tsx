@@ -1,20 +1,20 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { ArrowRightLeft, Boxes, Cable, Check, Cloud, Code2, Database, Download, Globe, Grip, HardDrive, Layers, Minus, MousePointer2, Network, Plus, Redo2, Router, Server, Shield, Trash2, Undo2, Upload, Zap } from 'lucide-react';
+import { ArrowRightLeft, Boxes, Cable, Check, Cloud, Code2, Database, Download, Globe, Grip, HardDrive, Layers, Minus, MousePointer2, Network, Plus, Redo2, Router, Server, Shield, Trash2, Undo2, Upload, Zap, Play, Sparkles } from 'lucide-react';
 import { BOARD, NETWORK_PARTS, connectNodes, createNode, emptyDesign, isSpace, parseDesign, partFor, position, removeNode, type DesignNode, type NetworkDesign, type PartType } from '../lib/networkDesign';
 
 const STORAGE_KEY = 'cloudops.network-draft.v1';
 const categories = ['Espacios', 'Red y acceso', 'Cómputo', 'Datos'];
-const partIcons = { vpc: Layers, az: Layers, 'public-subnet': Network, 'private-subnet': Shield, internet: Globe, route53: Network, cloudfront: Cloud, waf: Shield, igw: Router, nat: ArrowRightLeft, alb: ArrowRightLeft, api: Router, ec2: Server, lambda: Code2, ecs: Boxes, rds: Database, dynamodb: Zap, s3: HardDrive };
-function loadDraft() {
+const partIcons = { service: Cloud, vpc: Layers, az: Layers, 'public-subnet': Network, 'private-subnet': Shield, internet: Globe, route53: Network, cloudfront: Cloud, waf: Shield, igw: Router, nat: ArrowRightLeft, alb: ArrowRightLeft, api: Router, ec2: Server, lambda: Code2, ecs: Boxes, rds: Database, dynamodb: Zap, s3: HardDrive };
+function loadDraft(storageKey = STORAGE_KEY, seed = emptyDesign()) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return { design: raw ? parseDesign(raw) : emptyDesign(), message: raw ? 'Borrador recuperado' : 'Borrador local' };
-  } catch { return { design: emptyDesign(), message: 'No se pudo recuperar el borrador. Puedes importar una copia.' }; }
+    const raw = localStorage.getItem(storageKey);
+    return { design: raw ? parseDesign(raw) : seed, hasDraft:Boolean(raw), message: raw ? 'Borrador recuperado' : 'Borrador local' };
+  } catch { return { design: seed, hasDraft:false, message: 'No se pudo recuperar el borrador. Puedes importar una copia.' }; }
 }
 type Drag = { id: string; clientX: number; clientY: number; x: number; y: number; nextX: number; nextY: number };
 
-export function NetworkEditor({ expanded = false }: { expanded?: boolean }) {
-  const [initial] = useState(loadDraft);
+export function NetworkEditor({ expanded = false, storageKey = STORAGE_KEY, seed, onGenerateFlow }: { expanded?: boolean; storageKey?: string; seed?: NetworkDesign; onGenerateFlow?: () => Promise<NetworkDesign> }) {
+  const [initial] = useState(() => loadDraft(storageKey, seed));
   const [history, setHistory] = useState<{ past: NetworkDesign[]; present: NetworkDesign; future: NetworkDesign[] }>({ past: [], present: initial.design, future: [] });
   const design = history.present;
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -26,25 +26,58 @@ export function NetworkEditor({ expanded = false }: { expanded?: boolean }) {
   const [status, setStatus] = useState(initial.message);
   const [saveError, setSaveError] = useState('');
   const [confirmClear, setConfirmClear] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState('');
+  const [step, setStep] = useState<number | null>(null);
+  const generationLock = useRef(false);
+  const mounted = useRef(true);
+  const revision = useRef(0);
+  const activeEdge = step === null ? undefined : design.edges[step];
   const changed = useRef(false);
   const viewport = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const selected = design.nodes.find(node => node.id === selectedId);
   const edge = design.edges.find(item => item.id === selectedId);
   const nodes = design.nodes.map(node => moving?.id === node.id ? { ...node, x: moving.nextX, y: moving.nextY } : node);
+  useEffect(() => { mounted.current = true; fit(initial.design); return () => { mounted.current = false; }; }, []);
+  useEffect(() => {
+    if (seed && !initial.hasDraft && !changed.current) { setHistory({past:[],present:seed,future:[]}); fit(seed); }
+  }, [seed,initial.hasDraft]);
+  function fit(next: NetworkDesign) {
+    if (!next.nodes.length) return;
+    const width = Math.max(400,...next.nodes.map(n=>n.x+n.width+60));
+    const height = Math.max(300,...next.nodes.map(n=>n.y+n.height+60));
+    setZoom(Math.max(0.2,Math.min(1,(viewport.current?.clientWidth || 900)/width,(viewport.current?.clientHeight || 640)/height)));
+    if (viewport.current) { viewport.current.scrollLeft = 0; viewport.current.scrollTop = 0; }
+  }
+  async function generate() {
+    if (!onGenerateFlow || generationLock.current) return;
+    generationLock.current = true; setGenerating(true); setGenerationError('');
+    const before = revision.current;
+    try {
+      const next = parseDesign(JSON.stringify(await onGenerateFlow()));
+      if (!mounted.current) return;
+      if (revision.current !== before) throw new Error('El flujo quedó guardado, pero editaste el lienzo durante la generación. Pulsa Generar flujo del proyecto para aplicarlo.');
+      commit(next); fit(next); setSelectedId(null); setSourceId(null);
+      setStatus('Flujo del proyecto guardado y conectado. Puedes recorrerlo o deshacer el cambio.');
+    } catch (error) { if (mounted.current) setGenerationError(error instanceof Error ? error.message : 'No se pudo generar el flujo. Tu lienzo se conserva.'); }
+    finally { generationLock.current = false; if (mounted.current) setGenerating(false); }
+  }
 
   useEffect(() => {
     if (!changed.current) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(design)); setSaveError(''); }
+    try { localStorage.setItem(storageKey, JSON.stringify(design)); setSaveError(''); }
     catch { setSaveError('No se pudo guardar en este navegador. Exporta una copia para conservar tu red.'); }
-  }, [design]);
+  }, [design, storageKey]);
 
   function commit(next: NetworkDesign) {
     if (next === design) return;
+    revision.current++; setStep(null);
     changed.current = true;
     setHistory(current => ({ past: [...current.past, current.present].slice(-50), present: next, future: [] }));
   }
   function travel(direction: 'undo' | 'redo') {
+    revision.current++; setStep(null);
     changed.current = true; setSelectedId(null); setSourceId(null);
     setHistory(current => direction === 'undo' && current.past.length
       ? { past: current.past.slice(0, -1), present: current.past[current.past.length - 1], future: [current.present, ...current.future] }
@@ -111,6 +144,8 @@ export function NetworkEditor({ expanded = false }: { expanded?: boolean }) {
   return <div className="network-editor overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-3 dark:border-slate-700">
       <div className="flex flex-wrap gap-2">
+        {onGenerateFlow && <button className="primary-button" disabled={generating} onClick={() => void generate()}><Sparkles size={15} />{generating ? 'Generando flujo…' : 'Generar flujo del proyecto'}</button>}
+        <button className="editor-control" disabled={!design.edges.length || generating} onClick={() => { setStep(step === null ? 0 : null); fit(design); }}><Play size={15} />{step === null ? 'Recorrer flujo' : 'Cerrar recorrido'}</button>
         <button className="editor-control" aria-pressed={mode === 'move'} onClick={() => { setMode('move'); setSourceId(null); }}><MousePointer2 size={15} /> Mover</button>
         <button className="editor-control" aria-pressed={mode === 'connect'} onClick={() => { setMode('connect'); setSourceId(null); setStatus('Selecciona el origen y después el destino.'); }}><Cable size={15} /> Conectar</button>
         <button className="editor-control" aria-label="Deshacer cambio" disabled={!history.past.length} onClick={() => travel('undo')}><Undo2 size={16} /></button>
@@ -123,6 +158,10 @@ export function NetworkEditor({ expanded = false }: { expanded?: boolean }) {
         <button className="editor-control" disabled={!design.nodes.length} onClick={() => setConfirmClear(true)}><Trash2 size={15} /> Vaciar lienzo</button>
       </div>
     </div>
+    {generating && <p role="status" className="bg-blue-50 p-4 text-sm text-blue-800">Analizando las relaciones entre los servicios y requisitos. El flujo se guardará para este proyecto.</p>}
+    {generationError && <p role="alert" className="error-box m-3">{generationError}</p>}
+    {design.flow && <details className="border-b border-slate-200 p-4 text-sm dark:border-slate-700"><summary className="cursor-pointer font-semibold">Flujo propuesto del proyecto · {design.nodes.length} componentes · {design.edges.length} conexiones</summary><p className="mt-2">{design.flow.summary}</p><p className="mt-2 text-xs text-slate-500">Basado en el análisis guardado. Las decisiones propuestas se identifican en cada conexión; no representa una inspección de AWS desplegado.</p><ul className="mt-2 list-disc pl-5">{design.flow.assumptions.map((a,i)=><li key={i}>{a}</li>)}</ul></details>}
+    {activeEdge && <section aria-label="Recorrido del flujo" aria-live="polite" className="border-b border-blue-200 bg-blue-50 p-4 text-blue-950 dark:bg-blue-950 dark:text-blue-100"><p className="text-xs font-semibold">Paso {step!+1} de {design.edges.length} · {activeEdge.assumed ? 'Relación propuesta' : 'Relación del diseño'}</p><h3 className="mt-1 font-bold">{design.nodes.find(n=>n.id===activeEdge.source)?.name} → {design.nodes.find(n=>n.id===activeEdge.target)?.name}</h3><p className="mt-2 text-sm">{activeEdge.explanation ?? activeEdge.label}</p><div className="mt-3 flex gap-2"><button className="editor-control" disabled={step===0} onClick={()=>setStep(s=>Math.max(0,s!-1))}>Anterior</button><button className="editor-control" disabled={step===design.edges.length-1} onClick={()=>setStep(s=>s!+1)}>Siguiente</button></div></section>}
     {confirmClear && <div role="alert" className="flex flex-wrap items-center gap-3 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">¿Vaciar todos los componentes y conexiones?<button className="editor-control" onClick={() => { commit(emptyDesign()); setSelectedId(null); setSourceId(null); setConfirmClear(false); }}>Confirmar vaciado</button><button className="editor-control" onClick={() => setConfirmClear(false)}>Cancelar</button></div>}
     <div className="grid min-w-0 lg:grid-cols-[190px_minmax(0,1fr)_240px]">
       <aside aria-label="Piezas de red" className="border-b border-slate-200 p-3 lg:border-b-0 lg:border-r dark:border-slate-700 overflow-y-auto" style={{ maxHeight: expanded ? 'calc(100dvh - 210px)' : 640 }}>
@@ -148,20 +187,22 @@ export function NetworkEditor({ expanded = false }: { expanded?: boolean }) {
                   const from = nodes.find(n => n.id === item.source)!; const to = nodes.find(n => n.id === item.target)!;
                   const fromY = from.y + (isSpace(from.type) ? 24 : from.height / 2); const toY = to.y + (isSpace(to.type) ? 24 : to.height / 2);
                   const forward = to.x >= from.x; const x1 = from.x + (forward ? from.width : 0); const x2 = to.x + (forward ? 0 : to.width); const mid = (x1 + x2) / 2;
-                  const path = `M ${x1} ${fromY} C ${mid} ${fromY}, ${mid} ${toY}, ${x2} ${toY}`;
+                  const parallel = design.edges.filter(e=>e.source===item.source && e.target===item.target);
+                  const offset = (parallel.findIndex(e=>e.id===item.id) - (parallel.length-1)/2) * 64;
+                  const path = `M ${x1} ${fromY} C ${mid} ${fromY+offset}, ${mid} ${toY+offset}, ${x2} ${toY}`;
                   return <g key={item.id}>
-                    <path d={path} stroke={selectedId === item.id ? '#fff' : '#67e8f9'} strokeWidth={selectedId === item.id ? 3 : 2} strokeDasharray="7 6" fill="none" markerEnd="url(#network-arrow)" className="network-edge-flow" />
+                    <path d={path} stroke={activeEdge?.id === item.id ? '#fbbf24' : selectedId === item.id ? '#fff' : ['permission','observability','dns'].includes(item.kind ?? '') ? '#c4b5fd' : '#67e8f9'} strokeWidth={activeEdge?.id === item.id ? 5 : selectedId === item.id ? 3 : 2} strokeDasharray="7 6" fill="none" markerEnd="url(#network-arrow)" className="network-edge-flow" />
                     <path d={path} stroke="transparent" strokeWidth="20" fill="none" className="pointer-events-auto cursor-pointer" onClick={() => { setSelectedId(item.id); setSourceId(null); }} />
-                    <g transform={`translate(${mid}, ${(fromY + toY) / 2 - 13})`}><rect x="-55" y="-12" width="110" height="22" rx="5" fill="#17243a" /><text textAnchor="middle" y="3" fill="#cbd5e1" fontSize="11">{item.label.slice(0, 18)}</text></g>
+                    <g transform={`translate(${mid}, ${(fromY + toY) / 2 + offset*0.75 - 13})`}><rect x="-55" y="-12" width="110" height="22" rx="5" fill="#17243a" /><text textAnchor="middle" y="3" fill="#cbd5e1" fontSize="11">{item.label.slice(0, 18)}</text></g>
                   </g>;
                 })}
               </svg>
               {nodes.map(node => {
                 const part = partFor(node.type); const space = isSpace(node.type); const Icon = partIcons[node.type];
-                return <button key={node.id} type="button" aria-label={`Seleccionar ${node.name}`} aria-pressed={selectedId === node.id} onClick={() => select(node.id)}
+                return <button key={node.id} type="button" title={`${node.name}: ${node.detail}`} aria-label={`Seleccionar ${node.name}`} aria-pressed={selectedId === node.id} onClick={() => select(node.id)}
                   onPointerDown={event => startDrag(event, node)} onPointerMove={event => moveDrag(event, node)} onPointerUp={endDrag} onPointerCancel={() => { drag.current = null; setMoving(null); }}
                   onKeyDown={event => { const delta = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }[event.key]; if (delta && mode === 'move') { event.preventDefault(); commit({ ...design, nodes: design.nodes.map(item => item.id === node.id ? { ...item, ...position(item, item.x + delta[0], item.y + delta[1]) } : item) }); } }}
-                  className={`absolute touch-none select-none rounded-xl border px-3 py-2 text-left text-white shadow-lg ${mode === 'connect' ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'} ${selectedId === node.id || sourceId === node.id ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-950' : ''}`}
+                  className={`absolute touch-none select-none rounded-xl border px-3 py-2 text-left text-white shadow-lg ${mode === 'connect' ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'} ${activeEdge && [activeEdge.source,activeEdge.target].includes(node.id) ? 'ring-4 ring-amber-400' : selectedId === node.id || sourceId === node.id ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-950' : ''}`}
                   style={{ left: node.x, top: node.y, width: node.width, height: space ? 48 : node.height, borderColor: part.color, backgroundColor: space ? '#142239' : '#152033', zIndex: space ? 10 : 20 }}>
                   <span className="flex items-center gap-2"><Icon size={18} style={{ color: part.color }} className="shrink-0" /><span className="truncate text-xs font-semibold">{node.name}</span><Grip size={12} className="ml-auto shrink-0 text-slate-500" /></span>
                   {(!space || node.zone || node.detail) && <span className={`${space ? 'mt-0.5' : 'mt-2'} block truncate text-[10px] text-slate-400`}>{[node.zone, node.detail || (!space ? part.name : '')].filter(Boolean).join(' · ')}</span>}
@@ -175,7 +216,7 @@ export function NetworkEditor({ expanded = false }: { expanded?: boolean }) {
           <button className="rounded p-2 hover:bg-slate-700" aria-label="Alejar lienzo" disabled={zoom <= 0.4} onClick={() => setZoom(value => Math.max(0.4, +(value - 0.2).toFixed(1)))}><Minus size={15} /></button>
           <span className="w-10 text-center text-xs">{Math.round(zoom * 100)}%</span>
           <button className="rounded p-2 hover:bg-slate-700" aria-label="Acercar lienzo" disabled={zoom >= 1.6} onClick={() => setZoom(value => Math.min(1.6, +(value + 0.2).toFixed(1)))}><Plus size={15} /></button>
-          <button className="rounded px-2 py-1 text-xs hover:bg-slate-700" onClick={() => { setZoom(Math.max(0.2, Math.min((viewport.current?.clientWidth ?? 900) / BOARD.width, (viewport.current?.clientHeight ?? 640) / BOARD.height))); if (viewport.current) { viewport.current.scrollLeft = 0; viewport.current.scrollTop = 0; } }}>Ver todo</button>
+          <button className="rounded px-2 py-1 text-xs hover:bg-slate-700" onClick={() => fit(design)}>Ver todo</button>
         </div>
       </div>
       <aside aria-label="Propiedades de la red" className="space-y-4 overflow-y-auto border-t border-slate-200 p-4 lg:border-l lg:border-t-0 dark:border-slate-700" style={{ maxHeight: expanded ? 'calc(100dvh - 210px)' : 640 }}>
@@ -190,6 +231,8 @@ export function NetworkEditor({ expanded = false }: { expanded?: boolean }) {
           <p className="text-[11px] text-slate-500">Mueve con el puntero o las flechas del teclado. Los espacios agrupan visualmente las piezas.</p>
         </> : edge ? <>
           <p className="text-xs text-slate-500">{design.nodes.find(node => node.id === edge.source)?.name} → {design.nodes.find(node => node.id === edge.target)?.name}</p>
+          {edge.explanation && <p className="text-sm">{edge.explanation}</p>}
+          {edge.assumed && <p className="text-xs text-amber-700 dark:text-amber-300">Relación propuesta a partir de los requisitos; pendiente de validar al implementar.</p>}
           <label className="block text-xs">Protocolo / Puerto<input className="field mt-2" maxLength={100} value={edge.label} onChange={event => commit({ ...design, edges: design.edges.map(item => item.id === edge.id ? { ...item, label: event.target.value } : item) })} /></label>
         </> : <p className="text-xs leading-relaxed text-slate-500">Selecciona una pieza o conexión para editarla.</p>}
         {(selected || edge) && <button className="editor-control text-rose-600 dark:text-rose-400" onClick={erase}><Trash2 size={15} />{edge ? 'Eliminar conexión' : 'Eliminar componente'}</button>}

@@ -19,6 +19,15 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 describe('Propuestas y escenarios', () => {
+  it('el modo de proyectos conserva propuestas guardadas sin cargar costos de ejemplo', async () => {
+    mocks.from.mockClear();
+    localStorage.setItem('cloudops_workspace_v1_owner-1', JSON.stringify({ costEstimates: [{ monthlyCost: 999 }], iamUsers: [{ username: 'Demo' }] }));
+    render(<MemoryRouter><AppProvider projectMode><Workspace /></AppProvider></MemoryRouter>);
+    await screen.findByText('Listo');
+    expect(mocks.from).toHaveBeenCalledWith('cloudops_proposals');
+    expect(screen.getByTestId('monthly').textContent).toBe('0');
+    expect(screen.getByTestId('history').textContent).toBe('1');
+  });
   it('carga únicamente propuestas del usuario y conserva tarifa cero de IAM/VPC', async () => {
     render(<MemoryRouter><AppProvider><Workspace /></AppProvider></MemoryRouter>);
     await screen.findByText('Listo');

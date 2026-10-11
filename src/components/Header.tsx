@@ -3,6 +3,7 @@ import { errorMessage } from '../lib/supabase';
 import { userMessage } from '../lib/uiMessages';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useOptionalProjectWorkspace } from '../context/ProjectWorkspaceContext';
 import { GLOBAL_REGIONS } from '../data/awsServices';
 import {
   Sun,
@@ -18,6 +19,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
+  const projectWorkspace = useOptionalProjectWorkspace();
   const {
     activeTab,
     isDarkMode,
@@ -35,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [showNotificationsMenu, setShowNotificationsMenu] = useState(false);
 
   const pageTitles: Record<string, { title: string; subtitle: string }> = {
+    projects: { title: 'Análisis de proyectos', subtitle: 'Fuentes, seguridad y recomendaciones AWS con Gemini' },
     dashboard: {
       title: 'Dashboard',
       subtitle: 'Resumen de arquitectura, costos y seguridad',
@@ -45,23 +48,23 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     },
     costs: {
       title: 'Costos',
-      subtitle: 'Presupuesto mensual y proyección anual',
+      subtitle: 'Presupuesto y cotizaciones del proyecto',
     },
     infrastructure: {
       title: 'Infraestructura global',
-      subtitle: 'Regiones, zonas de disponibilidad y latencia',
+      subtitle: 'Región, disponibilidad e infraestructura propuesta',
     },
     security: {
       title: 'Seguridad e IAM',
-      subtitle: 'Gestión de accesos, controles y cumplimiento',
+      subtitle: 'Hallazgos, evidencias y acciones por revisar',
     },
     network: {
       title: 'Arquitectura de red',
-      subtitle: 'Conexiones y subredes de la arquitectura',
+      subtitle: 'Requisitos de red y servicios relacionados',
     },
     services: {
       title: 'Servicios AWS',
-      subtitle: 'Servicios disponibles para la arquitectura',
+      subtitle: 'Servicios recomendados para tu proyecto',
     },
   };
 
@@ -88,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </div>}
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-2 lg:ml-auto">
-          <div className="flex min-w-0 max-w-full items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs">
+          {!projectWorkspace && <div className="flex min-w-0 max-w-full items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs">
             <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <select
               aria-label="Región activa"
@@ -105,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 </option>
               ))}
             </select>
-          </div>
+          </div>}
           <button
             onClick={toggleDarkMode}
             className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer"

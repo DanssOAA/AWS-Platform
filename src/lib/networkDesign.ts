@@ -1,5 +1,6 @@
 export const BOARD = { width: 1800, height: 1200 };
 export const NETWORK_PARTS = [
+  { type: 'service', name: 'Servicio AWS', category: 'Cómputo', color: '#60a5fa' },
   { type: 'vpc', name: 'VPC', category: 'Espacios', color: '#60a5fa', width: 720, height: 580 },
   { type: 'az', name: 'Zona de disponibilidad', category: 'Espacios', color: '#c4b5fd', width: 320, height: 440 },
   { type: 'public-subnet', name: 'Subred pública', category: 'Espacios', color: '#34d399', width: 280, height: 200 },
@@ -21,8 +22,8 @@ export const NETWORK_PARTS = [
 ] as const;
 export type PartType = typeof NETWORK_PARTS[number]['type'];
 export type DesignNode = { id: string; type: PartType; name: string; x: number; y: number; width: number; height: number; detail: string; zone: string };
-export type DesignEdge = { id: string; source: string; target: string; label: string };
-export type NetworkDesign = { version: 1; nodes: DesignNode[]; edges: DesignEdge[] };
+export type DesignEdge = { id: string; source: string; target: string; label: string; kind?: string; explanation?: string; assumed?: boolean };
+export type NetworkDesign = { version: 1; nodes: DesignNode[]; edges: DesignEdge[]; flow?: {summary:string;assumptions:string[]} };
 export const emptyDesign = (): NetworkDesign => ({ version: 1, nodes: [], edges: [] });
 export const partFor = (type: PartType) => NETWORK_PARTS.find(part => part.type === type)!;
 export const isSpace = (type: PartType) => partFor(type).category === 'Espacios';
@@ -47,6 +48,7 @@ export function parseDesign(raw: string): NetworkDesign {
   if (!value || typeof value !== 'object') throw new Error('Invalid draft');
   const design = value as NetworkDesign;
   if (design.version !== 1 || !Array.isArray(design.nodes) || !Array.isArray(design.edges) || design.nodes.length > 200 || design.edges.length > 1000) throw new Error('Invalid draft');
+  if (design.flow && (typeof design.flow.summary !== 'string' || design.flow.summary.length > 2000 || !Array.isArray(design.flow.assumptions) || design.flow.assumptions.length > 12 || design.flow.assumptions.some(a=>typeof a !== 'string' || a.length > 1000))) throw new Error('Invalid flow');
   const ids = new Set<string>();
   for (const node of design.nodes) {
     if (!node || typeof node.id !== 'string' || ids.has(node.id) || !NETWORK_PARTS.some(p => p.type === node.type) ||
@@ -58,8 +60,9 @@ export function parseDesign(raw: string): NetworkDesign {
   const edgeIds = new Set<string>();
   const pairs = new Set<string>();
   for (const edge of design.edges) {
-    const pair = JSON.stringify([edge?.source, edge?.target]);
+    const pair = JSON.stringify([edge?.source, edge?.target, edge?.kind ?? '', edge?.label]);
     if (!edge || typeof edge.id !== 'string' || edgeIds.has(edge.id) || pairs.has(pair) || !ids.has(edge.source) || !ids.has(edge.target) || edge.source === edge.target || typeof edge.label !== 'string' || edge.label.length > 100) throw new Error('Invalid draft');
+    if ((edge.explanation !== undefined && (typeof edge.explanation !== 'string' || edge.explanation.length > 1000)) || (edge.kind !== undefined && (typeof edge.kind !== 'string' || edge.kind.length > 30)) || (edge.assumed !== undefined && typeof edge.assumed !== 'boolean')) throw new Error('Invalid connection');
     edgeIds.add(edge.id); pairs.add(pair);
   }
   return design;

@@ -1,0 +1,78 @@
+.analysis-report { @apply space-y-5 break-words; }
+.analysis-hero { @apply relative overflow-hidden rounded-2xl p-5 sm:p-7; background: linear-gradient(120deg, #10223d 0%, #17376b 65%, #2455a0 100%); }
+.analysis-hero-orb { position: absolute; width: 260px; height: 260px; right: -140px; top: -150px; border: 45px solid rgba(147,197,253,.09); border-radius: 50%; }
+.analysis-eyebrow { @apply inline-flex items-center gap-2 text-[10px] font-bold tracking-[.16em] text-blue-200; }
+.analysis-dark-chip { @apply rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-slate-200; }
+.analysis-download { @apply inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20 transition-colors; }
+.analysis-score { @apply relative w-32 shrink-0 self-center; }
+.analysis-score > svg { @apply w-32 h-32; }
+.analysis-score-value { @apply absolute inset-x-0 top-0 h-32 flex flex-col items-center justify-center text-white; }
+.analysis-score-value strong { font-size: 36px; line-height: 1.1; letter-spacing: -.04em; }
+.analysis-metrics { @apply grid grid-cols-2 xl:grid-cols-4 gap-3; }
+.analysis-metric { @apply relative rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900; }
+.analysis-metric-icon { @apply mb-3 inline-flex rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-blue-950 dark:text-blue-300; }
+.analysis-metric-icon.is-danger { @apply bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-300; }
+.analysis-tabs { @apply flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-slate-100/70 p-1.5 dark:border-slate-700 dark:bg-slate-950; scrollbar-width: thin; }
+.analysis-tab { @apply flex flex-1 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-3 text-xs font-semibold text-slate-500 transition-colors hover:text-slate-900 dark:hover:text-white; }
+.analysis-tab.is-active { @apply bg-white text-blue-700 shadow-sm dark:bg-slate-800 dark:text-blue-300; }
+.analysis-tabpanel { @apply min-w-0 outline-none; }
+.analysis-card { @apply rounded-xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-700 dark:bg-slate-900; }
+.analysis-card-heading { @apply flex gap-2 items-center text-sm font-bold; }
+.analysis-card-heading > svg { @apply text-blue-500; }
+.analysis-next { @apply flex gap-4 rounded-xl border border-blue-200 bg-blue-50/70 p-4 sm:p-5 dark:border-blue-900 dark:bg-blue-950/30; }
+.analysis-section-icon { @apply hidden sm:flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white; }
+.analysis-kicker { @apply text-[10px] font-bold uppercase tracking-[.13em] text-blue-600 dark:text-blue-300; }
+.analysis-text-link { @apply inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200; }
+.analysis-progress { @apply h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700; }
+.analysis-progress > span { @apply block h-full rounded-full bg-blue-500 transition-all; }
+.analysis-badge { @apply inline-flex rounded-md px-2 py-1 text-[10px] font-semibold; }
+.tone-critical { @apply bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200; }
+.tone-high { @apply bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200; }
+.tone-medium { @apply bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200; }
+.tone-low { @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200; }
+.tone-info, .tone-neutral { @apply bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300; }
+.analysis-severity-bar.severity-critical { @apply bg-rose-500; }
+.analysis-severity-bar.severity-high { @apply bg-orange-400; }
+.analysis-severity-bar.severity-medium { @apply bg-amber-400; }
+.analysis-severity-bar.severity-low { @apply bg-emerald-400; }
+.analysis-severity-bar.severity-info { @apply bg-slate-400; }
+.analysis-service-path { @apply mt-5 flex gap-3 overflow-x-auto pb-2; scrollbar-width: thin; }
+.analysis-path-step { @apply relative flex w-40 shrink-0 flex-col items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/40; }
+.analysis-path-number { @apply absolute right-3 top-3 text-[10px] font-semibold text-slate-400; }
+.analysis-filter { @apply flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300; }
+.analysis-filter > span { @apply rounded bg-slate-100 px-1.5 py-0.5 text-[10px] dark:bg-slate-800; }
+.analysis-filter.is-active { @apply border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300; }
+.analysis-empty { @apply flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-slate-700; }
+.analysis-finding { border-left-width: 3px; }
+.analysis-finding.severity-critical { border-left-color: #f43f5e; }
+.analysis-finding.severity-high { border-left-color: #fb923c; }
+.analysis-finding.severity-medium { border-left-color: #fbbf24; }
+.analysis-finding.severity-low { border-left-color: #34d399; }
+.analysis-remediation { @apply mt-4 flex gap-3 rounded-lg bg-emerald-50/70 p-3 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200; }
+.analysis-remediation > svg { @apply shrink-0 mt-0.5; }
+.analysis-evidence { @apply mt-4 border-t border-slate-100 pt-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300; }
+.analysis-evidence > summary { @apply flex cursor-pointer items-center gap-2 font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-300; }
+.analysis-evidence > blockquote { @apply mt-3 whitespace-pre-wrap break-words rounded-lg border-l-2 border-blue-300 bg-slate-50 p-3 font-mono text-[11px] leading-relaxed dark:border-blue-700 dark:bg-slate-950; }
+.analysis-evidence > p { @apply mt-2 text-[11px] text-slate-500; }
+.analysis-service { @apply overflow-hidden; }
+.analysis-service-icon { @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300; }
+.analysis-service-why { @apply mt-4 rounded-xl bg-blue-50/60 p-4 dark:bg-blue-950/30; }
+.analysis-requirement-chip { @apply inline-flex items-center gap-1.5 rounded-md bg-white px-2 py-1 text-[10px] font-medium text-blue-700 dark:bg-slate-800 dark:text-blue-300; }
+.analysis-note { @apply flex gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300; }
+.analysis-note > svg { @apply shrink-0 text-blue-500; }
+.analysis-search { @apply flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-400 dark:border-slate-700 dark:bg-slate-900; }
+.analysis-search > input { @apply w-full min-w-0 bg-transparent text-sm text-slate-800 outline-none dark:text-white; }
+.analysis-search:focus-within { @apply ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900; }
+.analysis-tab:focus-visible, .analysis-filter:focus-visible, .analysis-text-link:focus-visible, .analysis-download:focus-visible { @apply outline outline-2 outline-offset-2 outline-blue-500; }
+.analysis-plan-progress { @apply flex items-center gap-5 rounded-xl bg-blue-50 p-4 dark:bg-blue-950/40; }
+.analysis-step-number { @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300; }
+.analysis-task { @apply flex cursor-pointer items-start gap-3 rounded-lg border border-transparent p-3 hover:bg-slate-50 dark:hover:bg-slate-800; }
+.analysis-task > input { @apply mt-0.5 h-4 w-4 shrink-0 accent-blue-600; }
+.analysis-task.is-done { @apply border-emerald-100 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20; }
+.analysis-task.is-done > div > span { @apply text-slate-500 line-through; }
+.analysis-scope { @apply rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900; }
+.analysis-scope > summary { @apply flex cursor-pointer items-center gap-2 text-xs font-semibold; }
+.analysis-loading { @apply flex items-center justify-center gap-4 rounded-xl border border-slate-200 p-10 text-blue-500 dark:border-slate-700; }
+.analysis-failure { @apply rounded-2xl border border-amber-200 bg-amber-50/60 p-5 dark:border-amber-900 dark:bg-amber-950/20; }
+.analysis-failure-icon { @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200; }
+.analysis-working { @apply rounded-2xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-900 dark:bg-blue-950/30; }

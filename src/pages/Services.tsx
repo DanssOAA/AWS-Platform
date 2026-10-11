@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export const Services: React.FC = () => {
-  const { globalSearch, setGlobalSearch, costEstimates, addCostEstimate, removeCostEstimate } = useApp();
+  const { serviceCatalog = INITIAL_AWS_SERVICES, globalSearch, setGlobalSearch, costEstimates, addCostEstimate, removeCostEstimate } = useApp();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
 
   const categories: string[] = [
@@ -24,7 +24,7 @@ export const Services: React.FC = () => {
   ];
 
   // Filter logic: category & search term
-  const filteredServices = INITIAL_AWS_SERVICES.filter((srv) => {
+  const filteredServices = serviceCatalog.filter((srv) => {
     const matchesCategory = selectedCategory === 'Todas' || srv.category === selectedCategory;
     const matchesSearch =
       srv.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
@@ -62,7 +62,7 @@ export const Services: React.FC = () => {
 
           <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/60 px-4 py-2.5 rounded-xl border border-blue-100 dark:border-blue-900 text-xs font-semibold text-blue-900 dark:text-blue-300">
             <Sparkles className="w-4 h-4 text-blue-600" />
-            <span>{INITIAL_AWS_SERVICES.length} Servicios disponibles</span>
+            <span>{serviceCatalog.length} Servicios disponibles</span>
           </div>
         </div>
       </div>

@@ -1,5 +1,10 @@
 project_id = "cloudops-dashboard"
 
+[functions.cloudops-analyze-project]
+# Validates the user JWT with auth.getUser and CloudOps access before any operation.
+verify_jwt = false
+entrypoint = "./functions/cloudops-analyze-project/index.ts"
+
 [functions.cloudops-auth]
 # El usuario todavía no tiene JWT. La función valida el acceso del lado servidor.
 verify_jwt = false

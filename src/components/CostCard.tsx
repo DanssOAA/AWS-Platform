@@ -30,6 +30,7 @@ export const CostCard: React.FC<CostCardProps> = ({ item }) => {
         </button>
       </div>
 
+      {item.estimateBasis && <div className="mt-4 text-xs space-y-2"><p className="font-semibold text-blue-600">Rango original: USD {item.estimateMin}?{item.estimateMax}/mes</p><p>{item.estimateBasis}</p><ul className="list-disc pl-4">{item.estimateAssumptions?.map((a,i) => <li key={i}>{a}</li>)}</ul><p className="text-slate-500">La tarifa horaria es un equivalente del punto medio dividido entre 730 h. Los cambios de cantidad/horas simulan un escenario proporcional; no representan la tarifa de AWS.</p></div>}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4">
         <div>
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">

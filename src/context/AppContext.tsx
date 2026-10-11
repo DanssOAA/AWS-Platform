@@ -17,20 +17,20 @@ function costsForServices(ids: string[]): CostEstimate[] {
     return initial ?? { id: `cost-${service.id}`, serviceId: service.id, serviceName: service.name, category: service.category, quantity: 1, hoursPerMonth: 720, hourlyCost: service.hourlyCost, monthlyCost: Math.round(service.hourlyCost * 720 * 100) / 100, annualCost: Math.round(service.hourlyCost * 720 * 100) / 100 * 12 };
   });
 }
-function useAppState() {
+function useAppState(projectMode = false) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const cacheKey = `cloudops_workspace_v1_${user!.id}`;
-  const [cached] = useState(() => readCache<Partial<{ selectedRegion: string; activeProposalId: string | null; costEstimates: CostEstimate[]; iamUsers: IAMUser[]; security: SecuritySettings }>>(cacheKey, {}));
+  const [cached] = useState(() => readCache<Partial<{ selectedRegion: string; activeProposalId: string | null; costEstimates: CostEstimate[]; iamUsers: IAMUser[]; security: SecuritySettings }>>(projectMode ? '' : cacheKey, {}));
   const activeTab = location.pathname.split('/')[1] || 'dashboard';
   const setActiveTab = (tab: string) => navigate(`/${tab}`);
   const [isDarkMode, setIsDarkMode] = useState(() => readCache('cloudops_dark_mode', false));
   const [selectedRegion, setSelectedRegion] = useState(cached.selectedRegion ?? 'us-east-1');
   const [proposals, setProposals] = useState<CloudProposal[]>([]);
   const [activeProposalId, setActiveProposalId] = useState<string | null>(cached.activeProposalId ?? null);
-  const [costEstimates, setCostEstimates] = useState<CostEstimate[]>(cached.costEstimates ?? INITIAL_COST_ESTIMATES);
-  const [iamUsers, setIamUsers] = useState<IAMUser[]>(cached.iamUsers ?? IAM_USERS);
+  const [costEstimates, setCostEstimates] = useState<CostEstimate[]>(projectMode ? [] : cached.costEstimates ?? INITIAL_COST_ESTIMATES);
+  const [iamUsers, setIamUsers] = useState<IAMUser[]>(projectMode ? [] : cached.iamUsers ?? IAM_USERS);
   const [security, setSecurity] = useState<SecuritySettings>({ ...DEFAULT_SECURITY, ...cached.security });
   const [proposalsLoading, setProposalsLoading] = useState(true);
   const [proposalsError, setProposalsError] = useState('');
@@ -56,19 +56,19 @@ function useAppState() {
       setProposals(loaded);
       setActiveProposalId(current => loaded.some(p => p.id === current) ? current : (cached.activeProposalId === null ? null : loaded[0]?.id ?? null));
       if (!cached.selectedRegion && loaded[0]) setSelectedRegion(loaded[0].selectedRegion);
-      if (!cached.costEstimates && loaded[0]) setCostEstimates(costsForServices(loaded[0].selectedServices));
+      if (!projectMode && !cached.costEstimates && loaded[0]) setCostEstimates(costsForServices(loaded[0].selectedServices));
     } catch (error) { if (!signal?.aborted) setProposalsError(errorMessage(error)); }
     finally { if (!signal?.aborted) setProposalsLoading(false); }
-  }, [user!.id, cached.activeProposalId, cached.selectedRegion, cached.costEstimates]);
+  }, [user!.id, cached.activeProposalId, cached.selectedRegion, cached.costEstimates, projectMode]);
   useEffect(() => { const controller = new AbortController(); void loadProposals(controller.signal); return () => controller.abort(); }, [loadProposals]);
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
     try { localStorage.setItem('cloudops_dark_mode', JSON.stringify(isDarkMode)); } catch { /* Storage may be disabled. */ }
   }, [isDarkMode]);
   useEffect(() => {
-    if (proposalsLoading) return;
+    if (proposalsLoading || projectMode) return;
     try { localStorage.setItem(cacheKey, JSON.stringify({ selectedRegion, activeProposalId, costEstimates, iamUsers, security })); } catch { /* Remote saves remain available without local storage. */ }
-  }, [cacheKey, selectedRegion, activeProposalId, costEstimates, iamUsers, security, proposalsLoading]);
+  }, [cacheKey, selectedRegion, activeProposalId, costEstimates, iamUsers, security, proposalsLoading, projectMode]);
   function activateProposal(id: string) {
     const proposal = proposals.find(p => p.id === id);
     if (!proposal) return;
@@ -123,11 +123,11 @@ function useAppState() {
     if (account) setSecurity(prev => ({ ...prev, rotatedKeys: [...new Set([...prev.rotatedKeys, account.id])] }));
     addNotification('info', 'Rotación registrada', 'Control de claves actualizado.');
   }
-  return { activeTab, setActiveTab, isDarkMode, toggleDarkMode: () => setIsDarkMode(prev => !prev), selectedRegion, setSelectedRegion, proposals, activeProposal, activateProposal, proposalsLoading, proposalsError, loadProposals, addProposal, clearProposals, costEstimates, updateCostQuantity, addCostEstimate, removeCostEstimate, clearAllCosts, clearAllDashboardData, resetDefaultData, saveCostScenario, selectedServiceModal, setSelectedServiceModal, notifications, addNotification, removeNotification, globalSearch, setGlobalSearch, iamUsers, security, setSecurity, securityChecks, architectureServices, toggleMfa, rotateKey };
+  return { dashboardCleared: false, serviceCatalog: INITIAL_AWS_SERVICES, analyzedProject: false, analysisScore: null as number | null, activeTab, setActiveTab, isDarkMode, toggleDarkMode: () => setIsDarkMode(prev => !prev), selectedRegion, setSelectedRegion, proposals, activeProposal, activateProposal, proposalsLoading, proposalsError, loadProposals, addProposal, clearProposals, costEstimates, updateCostQuantity, addCostEstimate, removeCostEstimate, clearAllCosts, clearAllDashboardData, resetDefaultData, saveCostScenario, selectedServiceModal, setSelectedServiceModal, notifications, addNotification, removeNotification, globalSearch, setGlobalSearch, iamUsers, security, setSecurity, securityChecks, architectureServices, toggleMfa, rotateKey };
 }
-const AppContext = createContext<ReturnType<typeof useAppState> | undefined>(undefined);
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  const state = useAppState();
+export const AppContext = createContext<ReturnType<typeof useAppState> | undefined>(undefined);
+export function AppProvider({ children, projectMode = false }: { children: React.ReactNode; projectMode?: boolean }) {
+  const state = useAppState(projectMode);
   return <AppContext.Provider value={state}>{children}</AppContext.Provider>;
 }
 export function useApp() {

@@ -95,7 +95,7 @@ export const ServiceDetailModal: React.FC = () => {
         </div>
         <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            Costo estimado: <strong className="text-slate-800 dark:text-white">${selectedServiceModal.hourlyCost.toFixed(4)} / hr</strong>
+            Costo estimado: <strong className="text-slate-800 dark:text-white">${selectedServiceModal.hourlyCost.toFixed(4)} / hr equivalente</strong>
           </div>
           <div className="flex items-center gap-2">
             <button

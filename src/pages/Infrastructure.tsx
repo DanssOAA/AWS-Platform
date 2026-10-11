@@ -5,10 +5,10 @@ import { GLOBAL_REGIONS, INITIAL_AWS_SERVICES } from '../data/awsServices';
 import { RegionExplorer } from '../components/RegionExplorer';
 
 export function Infrastructure() {
-  const { selectedRegion, setSelectedRegion, architectureServices, addNotification, clearAllDashboardData, resetDefaultData } = useApp();
+  const { serviceCatalog = INITIAL_AWS_SERVICES, selectedRegion, setSelectedRegion, architectureServices, addNotification, clearAllDashboardData, resetDefaultData } = useApp();
   const [showConfirmClearModal, setShowConfirmClearModal] = useState(false);
   const currentRegion = GLOBAL_REGIONS.find(region => region.code === selectedRegion) ?? GLOBAL_REGIONS[0];
-  const services = architectureServices.map(id => INITIAL_AWS_SERVICES.find(service => service.id === id)?.name ?? id);
+  const services = architectureServices.map(id => serviceCatalog.find(service => service.id === id)?.name ?? id);
 
   function selectRegion(code: string) {
     setSelectedRegion(code);

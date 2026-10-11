@@ -38,7 +38,7 @@ export const Security: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl border border-emerald-200 dark:border-emerald-800 text-center">
-              <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{Math.round(iamUsers.filter(u => u.mfaEnabled).length / iamUsers.length * 100)}%</span>
+              <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{iamUsers.length ? Math.round(iamUsers.filter(u => u.mfaEnabled).length / iamUsers.length * 100) : 'Sin datos'}{iamUsers.length ? '%' : ''}</span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Cobertura MFA</span>
             </div>
             <div className="p-3 bg-amber-50 dark:bg-amber-950/60 rounded-xl border border-amber-200 dark:border-amber-800 text-center">
@@ -49,7 +49,7 @@ export const Security: React.FC = () => {
         </div>
       </div>
 
-      <section className="panel space-y-4"><h3 className="font-bold">Controles de seguridad</h3><p className="text-sm text-slate-500">Activa o desactiva controles para evaluar el nivel de protección de la arquitectura.</p><div className="flex flex-wrap gap-6">{([{ key: 'encryption', label: 'Cifrado de datos' }, { key: 'privateDatabase', label: 'Base de datos privada' }, { key: 'compliance', label: 'Revisión de cumplimiento' }] as const).map(item => <label key={item.key} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={security[item.key]} onChange={e => setSecurity(prev => ({ ...prev, [item.key]: e.target.checked }))} />{item.label}</label>)}</div><p className="text-xs">Estado: <span className="text-green-600">Correcto</span> · <span className="text-amber-600">Revisar</span> · <span className="text-red-600">Crítico</span></p></section>
+      <section className="panel space-y-4"><h3 className="font-bold">Controles de seguridad</h3><p className="text-sm text-slate-500">Simula controles para planificar la arquitectura. Estos cambios no verifican ni resuelven los hallazgos del análisis.</p><div className="flex flex-wrap gap-6">{([{ key: 'encryption', label: 'Cifrado de datos' }, { key: 'privateDatabase', label: 'Base de datos privada' }, { key: 'compliance', label: 'Revisión de cumplimiento' }] as const).map(item => <label key={item.key} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={security[item.key]} onChange={e => setSecurity(prev => ({ ...prev, [item.key]: e.target.checked }))} />{item.label}</label>)}</div><p className="text-xs">Estado: <span className="text-green-600">Correcto</span> · <span className="text-amber-600">Revisar</span> · <span className="text-red-600">Crítico</span></p></section>
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
           <Lock className="w-5 h-5 text-blue-600" /> Responsabilidad compartida

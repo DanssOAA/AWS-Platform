@@ -2,6 +2,7 @@ import { userMessage } from '../lib/uiMessages';
 import { errorMessage } from '../lib/supabase';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useOptionalProjectWorkspace } from '../context/ProjectWorkspaceContext';
 import { CostCard } from '../components/CostCard';
 import { INITIAL_AWS_SERVICES } from '../data/awsServices';
 import {
@@ -30,12 +31,16 @@ import {
 
 
 export const Costs: React.FC = () => {
-  const { costEstimates, addCostEstimate, clearAllCosts, resetDefaultData, addNotification, saveCostScenario } = useApp();
+  const workspace = useOptionalProjectWorkspace();
+  const pendingEstimates = workspace?.estimatesPending ?? 0;
+  const calculating = workspace?.estimating ?? false;
+  const loadingProject = Boolean(workspace?.loading && !workspace.run);
+  const { analyzedProject, serviceCatalog = INITIAL_AWS_SERVICES, costEstimates, addCostEstimate, clearAllCosts, resetDefaultData, addNotification, saveCostScenario } = useApp();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saved, setSaved] = useState(false);
   const save = async () => { setSaving(true); setSaveError(''); setSaved(false); try { await saveCostScenario(); setSaved(true); } catch (error) { setSaveError(errorMessage(error)); } finally { setSaving(false); } };
-  const [selectedServiceToAdd, setSelectedServiceToAdd] = useState(INITIAL_AWS_SERVICES[0].id);
+  const [selectedServiceToAdd, setSelectedServiceToAdd] = useState(serviceCatalog[0]?.id ?? '');
   const [showConfirmClearModal, setShowConfirmClearModal] = useState(false);
 
   const handleConfirmClear = () => {
@@ -50,7 +55,7 @@ export const Costs: React.FC = () => {
   const reservedInstanceSavings = totalAnnualCost * 0.3;
 
   const barChartData = costEstimates.map(item => ({
-    name: item.serviceName.split(' ')[1] || item.serviceName,
+    name: item.serviceName,
     CostoMensual: item.monthlyCost,
   }));
 
@@ -91,16 +96,16 @@ export const Costs: React.FC = () => {
               Estimación de costos
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-              Calcula el costo por cantidad y horas de uso.
+              Rangos estimados por servicio. Los gráficos usan el punto medio; ajusta cantidad y horas como escenario proporcional.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
             <div className="flex items-center gap-6 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto justify-around">
               <div>
-                <span className="text-xs text-slate-400 block font-medium">Costo mensual</span>
+                <span className="text-xs text-slate-400 block font-medium">{pendingEstimates ? 'Subtotal estimado' : 'Costo mensual'}</span>
                 <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
-                  ${totalMonthlyCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {costEstimates.length ? `$${totalMonthlyCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : calculating ? 'Calculando…' : 'Pendiente'}
                 </span>
                 <span className="text-[10px] text-slate-400 block">USD / mes</span>
               </div>
@@ -110,7 +115,7 @@ export const Costs: React.FC = () => {
               <div>
                 <span className="text-xs text-slate-400 block font-medium">Proyección anual</span>
                 <span className="text-2xl font-black text-slate-800 dark:text-white">
-                  ${totalAnnualCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {costEstimates.length ? `$${totalAnnualCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'Pendiente'}
                 </span>
                 <span className="text-[10px] text-slate-400 block">USD / año</span>
               </div>
@@ -118,6 +123,7 @@ export const Costs: React.FC = () => {
             <div className="flex sm:flex-col gap-2">
               <button
                 onClick={() => setShowConfirmClearModal(true)}
+                disabled={calculating}
                 className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
                 title="Vaciar el presupuesto"
               >
@@ -126,14 +132,22 @@ export const Costs: React.FC = () => {
               <button
                 onClick={resetDefaultData}
                 className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                title="Restaurar datos iniciales"
+                title="Recargar datos del análisis"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-blue-500" /> Restaurar
               </button>
             </div>
           </div>
         </div>
-        {totalAnnualCost > 0 && (
+        {workspace?.run && <div className="mt-5 rounded-xl bg-blue-50 dark:bg-blue-950/40 p-4 text-sm" aria-live="polite">
+          <p className="font-semibold">Estimación de {workspace.project?.name}</p>
+          {calculating ? <p role="status" className="mt-1">Calculando los costos de este proyecto con Gemini. Se guardarán y aparecerán automáticamente; puedes cambiar de proyecto mientras termina.</p>
+            : pendingEstimates ? <><p className="mt-1">Faltan estimaciones para {pendingEstimates} servicios de este proyecto.</p>
+              {workspace.estimateError && <p role="alert" className="mt-2 text-amber-700 dark:text-amber-300">{workspace.estimateError}</p>}
+              <button className="primary-button mt-3" onClick={() => void workspace.estimateCosts()}>Completar estimación de este proyecto</button></>
+              : <p className="mt-1">Costos cargados del análisis de este proyecto. Al cambiar de proyecto se recupera su propia estimación guardada.</p>}
+        </div>}
+        {!analyzedProject && totalAnnualCost > 0 && (
           <div className="mt-4 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-2.5 text-xs">
             <TrendingDown className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="text-emerald-800 dark:text-emerald-300">
@@ -151,14 +165,15 @@ export const Costs: React.FC = () => {
             onChange={(e) => setSelectedServiceToAdd(e.target.value)}
             className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0 flex-1 sm:w-64"
           >
-            {INITIAL_AWS_SERVICES.map((srv) => (
+            {serviceCatalog.map((srv) => (
               <option key={srv.id} value={srv.id}>
-                {srv.name} (${srv.hourlyCost.toFixed(4)}/hr)
+                {srv.name} ({srv.details.pricingModel === 'Pendiente de estimar' ? 'costo pendiente' : `$${srv.hourlyCost.toFixed(4)}/hr equivalente`})
               </option>
             ))}
           </select>
           <button
             onClick={() => addCostEstimate(selectedServiceToAdd)}
+            disabled={calculating}
             className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/30 flex items-center gap-1.5 shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Agregar servicio
@@ -183,7 +198,7 @@ export const Costs: React.FC = () => {
               <TrendingUp className="w-5 h-5 text-amber-500" /> Costos por servicio
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Gasto mensual por componente
+              Estimación mensual por componente
             </p>
           </div>
           <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
@@ -207,6 +222,12 @@ export const Costs: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
+        ) : pendingEstimates || loadingProject ? (
+          <div className="h-80 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-blue-200 p-6 text-center gap-3">
+            <Sparkles className="w-10 h-10 text-blue-500" />
+            <h4 className="font-bold">{loadingProject ? 'Cargando la estimación del proyecto' : calculating ? 'Preparando la gráfica de costos' : 'La estimación está pendiente'}</h4>
+            <p className="text-sm text-slate-500">{loadingProject ? 'Recuperando el análisis y los costos guardados del proyecto seleccionado.' : `Los ${serviceCatalog.length} servicios de ${workspace?.project?.name} ya están identificados. La gráfica se completará cuando sus costos estén guardados.`}</p>
+          </div>
         ) : (
           <div className="h-80 w-full flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center p-6 space-y-3">
             <Package className="w-10 h-10 text-slate-300 dark:text-slate-700" />
@@ -218,7 +239,7 @@ export const Costs: React.FC = () => {
               onClick={resetDefaultData}
               className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <RotateCcw className="w-4 h-4" /> Restaurar datos iniciales
+              <RotateCcw className="w-4 h-4" /> Recargar datos del análisis
             </button>
           </div>
         )}
@@ -237,7 +258,7 @@ export const Costs: React.FC = () => {
         ) : (
           <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-10 text-center space-y-2">
             <Sparkles className="w-8 h-8 text-slate-300 dark:text-slate-700 mx-auto" />
-            <p className="text-sm text-slate-500 dark:text-slate-400">El presupuesto está vacío.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{pendingEstimates || loadingProject ? 'El detalle aparecerá automáticamente al completar la estimación.' : 'El presupuesto está vacío.'}</p>
           </div>
         )}
       </div>

@@ -34,6 +34,10 @@ export interface CloudProposal {
 }
 
 export interface CostEstimate {
+  estimateMin?: number;
+  estimateMax?: number;
+  estimateBasis?: string;
+  estimateAssumptions?: string[];
   id: string;
   serviceId: string;
   serviceName: string;
