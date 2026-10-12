@@ -22,4 +22,12 @@ describe('verificación de dependencias npm', () => {
     const report = await scanNpmDependencies(source(lockfile), vi.fn().mockResolvedValue(new Response('error', { status: 503 })));
     expect(report.findings).toEqual([]); expect(report.coverage.join(' ')).toMatch(/no estuvo disponible/i);
   });
+  it('consulta dependencias Python únicamente cuando requirements fija una versión exacta', async () => {
+    const python = '--- FILE: requirements.txt ---\nDjango==4.2.0\nrequests>=2.0\n-r base.txt';
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ results: [{ vulns: [] }] })));
+    const report = await scanNpmDependencies(source(python), fetcher);
+    const query = JSON.parse(fetcher.mock.calls[0][1].body).queries;
+    expect(query).toEqual([{ package: { name: 'Django', ecosystem: 'PyPI' }, version: '4.2.0' }]);
+    expect(report.findings).toEqual([]); expect(report.coverage.join(' ')).toMatch(/Python/);
+  });
 });
