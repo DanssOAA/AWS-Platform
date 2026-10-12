@@ -19,7 +19,7 @@ export type AnalysisRun = {
   model: string; created_at: string; finished_at: string | null;
 };
 export type Requirement = { id: string; category?: string; source_version_id?: string; title: string; description: string; priority: string; origin: string; confidence: number; evidence_excerpt: string; evidence_location: string };
-export type Finding = { id: string; category?: string; source_version_id?: string; title: string; severity: string; description: string; remediation: string; evidence_excerpt: string; evidence_location: string; verification_status: string };
+export type Finding = { id: string; category?: string; source_version_id?: string; title: string; severity: string; description: string; remediation: string; evidence_excerpt: string; evidence_location: string; verification_status: string; detector?: 'gemini' | 'static'; rule_id?: string | null; scanner_version?: string | null; aws_controls?: { service: string; control: string }[] };
 export type Recommendation = {
   id: string; service_code?: string; service_name: string; purpose: string; rationale: string; priority: string;
   suggested_configuration: { description?: string; cost_estimate?: import('./projectEstimates').PlanningEstimate }; alternatives: string[]; assumptions: string[];

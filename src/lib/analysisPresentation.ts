@@ -43,7 +43,7 @@ export function reportMarkdown(name: string, run: AnalysisRun, data: AnalysisDet
     '## Requisitos',
     ...data.requirements.flatMap(r => ['### ' + r.title, r.description, 'Prioridad: ' + analysisLabels[r.priority] + ' · ' + analysisLabels[r.origin], '> ' + r.evidence_excerpt.replace(/\n/g,'\n> '), 'Ubicación: ' + r.evidence_location, '']),
     '## Hallazgos de seguridad',
-    ...data.findings.flatMap(f => ['### ' + f.title + ' — ' + analysisLabels[f.severity], f.description, 'Acción: ' + f.remediation, '> ' + f.evidence_excerpt.replace(/\n/g,'\n> '), 'Ubicación: ' + f.evidence_location, '']),
+    ...data.findings.flatMap(f => ['### ' + f.title + ' — ' + analysisLabels[f.severity], 'Origen: ' + (f.detector === 'static' ? 'Regla verificada' + (f.rule_id ? ' (' + f.rule_id + ')' : '') : 'Análisis contextual con IA'), f.description, 'Acción: ' + f.remediation, ...(f.aws_controls?.length ? ['Controles AWS: ' + f.aws_controls.map(c => c.service + ' — ' + c.control).join('; ')] : []), '> ' + f.evidence_excerpt.replace(/\n/g,'\n> '), 'Ubicación: ' + f.evidence_location, '']),
     '## Servicios AWS',
     ...data.recommendations.flatMap(r => ['### ' + r.service_name, r.purpose, 'Justificación: ' + r.rationale,
       'Configuración: ' + (r.suggested_configuration.description ?? 'Por definir'),

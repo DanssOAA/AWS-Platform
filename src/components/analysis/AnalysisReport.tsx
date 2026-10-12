@@ -226,9 +226,12 @@ function Evidence({ excerpt, location, source }: { excerpt: string; location: st
   return <details className="analysis-evidence"><summary><Search size={13} /> Ver evidencia en la fuente</summary><blockquote>{excerpt}</blockquote><p>{source ? source + ' · ' : ''}{location}</p></details>;
 }
 function FindingCard({ finding: f, source }: { finding: Finding; source?: string }) {
-  return <article className={'analysis-card analysis-finding severity-' + f.severity}><div className="flex flex-wrap gap-2 mb-3"><span className={'analysis-badge tone-' + f.severity}>{labels[f.severity]}</span><span className="analysis-badge tone-neutral">{labels[f.verification_status] ?? 'Por verificar'}</span></div>
+  const controls = Array.isArray(f.aws_controls) ? f.aws_controls : [];
+  const deterministic = f.detector === 'static';
+  return <article className={'analysis-card analysis-finding severity-' + f.severity}><div className="flex flex-wrap gap-2 mb-3"><span className={'analysis-badge tone-' + f.severity}>{labels[f.severity]}</span><span className="analysis-badge tone-neutral">{labels[f.verification_status] ?? 'Por verificar'}</span><span className={'analysis-badge ' + (deterministic ? 'tone-info' : 'tone-neutral')}>{deterministic ? 'Regla verificada' : 'Análisis contextual IA'}</span>{f.rule_id && <span className="analysis-badge tone-neutral font-mono">{f.rule_id}</span>}</div>
     <h4 className="font-bold text-base">{f.title}</h4><p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{f.description}</p>
     <div className="analysis-remediation"><CheckCircle2 size={18} /><div><p className="font-semibold text-xs">QUÉ PUEDES HACER</p><p className="mt-1 text-sm leading-relaxed">{f.remediation}</p></div></div>
+    {!!controls.length && <div className="mt-4 rounded-xl bg-blue-50 p-3 text-sm dark:bg-blue-950/40"><p className="font-semibold text-xs text-blue-800 dark:text-blue-200">CONTROLES AWS RELACIONADOS</p><ul className="mt-2 space-y-1 text-slate-700 dark:text-slate-200">{controls.map((control, index) => <li key={index}><strong>{control.service}:</strong> {control.control}</li>)}</ul></div>}
     <Evidence excerpt={f.evidence_excerpt} location={f.evidence_location} source={source} />
   </article>;
 }
