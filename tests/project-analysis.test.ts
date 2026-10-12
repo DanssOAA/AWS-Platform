@@ -53,6 +53,14 @@ describe('validación de resultados', () => {
     expect(input.evidence_blocks[0]).toMatchObject({ evidence_id: 'E1', content: version.extracted_text });
     expect(result.requirements[0].evidence_excerpt).toBe(version.extracted_text);
   });
+  it('repara una respuesta con evidencia inválida sin requerir otro clic', async () => {
+    const invalid = validResult(); invalid.requirements[0].evidence_id = 'E999';
+    const response = (value: unknown) => new Response(JSON.stringify({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(value) }] } }] }));
+    const fetcher = vi.fn().mockResolvedValueOnce(response(invalid)).mockResolvedValueOnce(response(validResult()));
+    const result = await generateAnalysis('test-key', 'gemini-2.5-flash', {}, [version], fetcher);
+    expect(result.requirements).toHaveLength(1); expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetcher.mock.calls[1][1].body).contents[0].parts[0].text).toContain('correction');
+  });
   it('no convierte cuotas o respuestas truncadas en éxito', async () => {
     await expect(generateAnalysis('key', 'model', {}, [version], vi.fn().mockResolvedValue(new Response('{}', { status: 429 })))).rejects.toThrow(/cuota/);
     await expect(generateAnalysis('key', 'model', {}, [version], vi.fn().mockResolvedValue(new Response(JSON.stringify({ candidates: [{ finishReason: 'MAX_TOKENS' }] }))))).rejects.toThrow(/no completó/);

@@ -5,11 +5,13 @@ export async function fetchGemini(url: string, init: RequestInit, fetcher = fetc
     let response: Response;
     try { response = await fetcher(url, { ...init, signal }); }
     catch (error) {
-      if (signal.aborted || attempt >= 2 || !(error instanceof TypeError)) throw error;
-      await pause(750 * 2 ** attempt); continue;
+      if (signal.aborted || attempt >= 3 || !(error instanceof TypeError)) throw error;
+      await pause(1000 * 2 ** attempt); continue;
     }
-    if (![500, 502, 503, 504].includes(response.status) || attempt >= 2) return response;
+    // Gemini can briefly report UNAVAILABLE while capacity is being reassigned.
+    // Four total attempts keep this bounded while making a manual second click unlikely.
+    if (![500, 502, 503, 504].includes(response.status) || attempt >= 3) return response;
     await response.body?.cancel();
-    await pause(750 * 2 ** attempt);
+    await pause(1000 * 2 ** attempt);
   }
 }
