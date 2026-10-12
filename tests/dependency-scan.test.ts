@@ -30,4 +30,10 @@ describe('verificación de dependencias npm', () => {
     expect(query).toEqual([{ package: { name: 'Django', ecosystem: 'PyPI' }, version: '4.2.0' }]);
     expect(report.findings).toEqual([]); expect(report.coverage.join(' ')).toMatch(/Python/);
   });
+  it('extrae versiones resueltas de Poetry, Pipenv y uv', async () => {
+    const locks = `--- FILE: poetry.lock ---\n[[package]]\nname = "flask"\nversion = "2.0.0"\n--- FILE: Pipfile.lock ---\n{"default":{"requests":{"version":"==2.28.0"}}}\n--- FILE: uv.lock ---\n[[package]]\nname = "fastapi"\nversion = "0.100.0"`;
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ results: [{ vulns: [] }, { vulns: [] }, { vulns: [] }] })));
+    await scanNpmDependencies(source(locks), fetcher);
+    expect(JSON.parse(fetcher.mock.calls[0][1].body).queries.map((q: any) => q.package.name)).toEqual(['flask', 'requests', 'fastapi']);
+  });
 });

@@ -7,6 +7,7 @@ const MAX_PACKAGES = 50;
 const MAX_FINDINGS = 12;
 const HEADER = /--- FILE: ([^\n]*package-lock\.json) ---\n([\s\S]*?)(?=\n--- FILE: |\s*$)/gi;
 const REQUIREMENTS = /--- FILE: ([^\n]*(?:requirements(?:[-._][^/\n]+)?|constraints)\.txt) ---\n([\s\S]*?)(?=\n--- FILE: |\s*$)/gi;
+const PYTHON_LOCK = /--- FILE: ([^\n]*(?:poetry\.lock|uv\.lock|Pipfile\.lock)) ---\n([\s\S]*?)(?=\n--- FILE: |\s*$)/gi;
 
 function lockedPackages(versions: SourceVersion[]) {
   const found: LockedPackage[] = [];
@@ -24,6 +25,22 @@ function lockedPackages(versions: SourceVersion[]) {
           found.push({ source_version_id: source.id, name, version, ecosystem: 'npm', source_file: match[1] });
         }
       } catch { /* A malformed lockfile is not a vulnerability finding. */ }
+    }
+  }
+  for (const source of versions) {
+    PYTHON_LOCK.lastIndex = 0;
+    for (let match; (match = PYTHON_LOCK.exec(source.extracted_text));) {
+      if (/Pipfile\.lock$/i.test(match[1])) try {
+        const data = JSON.parse(match[2]);
+        for (const section of ['default', 'develop']) for (const [name, value] of Object.entries(data?.[section] ?? {})) {
+          const version = (value as { version?: unknown })?.version;
+          if (typeof version === 'string' && /^==[0-9A-Za-z][0-9A-Za-z.+!_-]{0,127}$/.test(version)) found.push({ source_version_id: source.id, name, version: version.slice(2), ecosystem: 'PyPI', source_file: match[1] });
+        }
+      } catch { /* ignored */ }
+      else for (const block of match[2].split(/\n\[\[package\]\]\n/)) {
+        const name = block.match(/^name\s*=\s*["']([^"']+)["']/m)?.[1]; const version = block.match(/^version\s*=\s*["']([^"']+)["']/m)?.[1];
+        if (name && version && /^[0-9A-Za-z][0-9A-Za-z.+!_-]{0,127}$/.test(version)) found.push({ source_version_id: source.id, name, version, ecosystem: 'PyPI', source_file: match[1] });
+      }
     }
   }
   for (const source of versions) {
