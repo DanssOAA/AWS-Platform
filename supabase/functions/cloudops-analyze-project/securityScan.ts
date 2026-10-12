@@ -20,8 +20,9 @@ const rules: Rule[] = [
 function lineAt(text: string, index: number) { return text.slice(0, index).split('\n').length; }
 export function scanSecurityReport(versions: SourceVersion[]): SecurityScanReport {
   const results: StaticSecurityFinding[] = [];
+  const hasImportedLockfile = versions.some(source => /--- FILE: [^\n]*(?:package-lock\.json|pnpm-lock\.yaml|yarn\.lock) ---/i.test(source.extracted_text));
   for (const source of versions) for (const rule of rules) {
-    if (rule.rule_id === 'DEP-NO-LOCKFILE' && /--- FILE: [^\n]*(?:package-lock\.json|pnpm-lock\.yaml|yarn\.lock) ---/i.test(source.extracted_text)) continue;
+    if (rule.rule_id === 'DEP-NO-LOCKFILE' && hasImportedLockfile) continue;
     const match = rule.pattern.exec(source.extracted_text);
     if (!match) continue;
     const line = lineAt(source.extracted_text, match.index);

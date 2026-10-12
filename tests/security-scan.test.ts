@@ -17,6 +17,8 @@ describe('escáner estático de seguridad', () => {
     expect(withoutLock.map(f => f.rule_id)).toContain('DEP-NO-LOCKFILE');
     const withLock = scanSecurity(source('--- FILE: apps/web/package.json ---\n{}\n--- FILE: apps/web/package-lock.json ---\n{}'));
     expect(withLock.map(f => f.rule_id)).not.toContain('DEP-NO-LOCKFILE');
+    const acrossSources = scanSecurity([...source('--- FILE: package.json ---\n{}'), ...source('--- FILE: package-lock.json ---\n{}')]);
+    expect(acrossSources.map(f => f.rule_id)).not.toContain('DEP-NO-LOCKFILE');
   });
   it('declara explícitamente la cobertura y los límites del escáner', () => {
     const report = scanSecurityReport(source('const app = true;'));

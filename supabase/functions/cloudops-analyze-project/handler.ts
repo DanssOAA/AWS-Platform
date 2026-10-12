@@ -5,6 +5,7 @@ import { AnalysisError, PROMPT_VERSION, UUID, generateAnalysis, sanitizeText, ty
 import { boundedText, importSource } from './sources.ts';
 import { answerProjectQuestion } from './assistant.ts';
 import { scanSecurityReport } from './securityScan.ts';
+import { scanNpmDependencies } from './dependencyScan.ts';
 
 function dbError(error: { message?: string } | null) {
   if (!error) return;
@@ -96,10 +97,14 @@ export function createAnalysisHandler(options: {
       // could discard unrelated context after a word such as "password".
       const cleanContext = JSON.parse(JSON.stringify(run.input_context, (_key, value) => typeof value === 'string' ? sanitizeText(value) : value));
       const staticScan = scanSecurityReport(versions as SourceVersion[]);
-      const generated = await generateAnalysis(apiKey, model, cleanContext, versions as SourceVersion[], fetcher);
+      const [dependencyScan, generated] = await Promise.all([
+        scanNpmDependencies(versions as SourceVersion[], fetcher),
+        generateAnalysis(apiKey, model, cleanContext, versions as SourceVersion[], fetcher),
+      ]);
       // Deterministic signals take precedence and are capped with the existing
       // transactional limit; Gemini findings remain clearly attributable.
-      const result = { ...generated, findings: [...staticScan.findings, ...generated.findings].slice(0, 20), limitations: [...generated.limitations, ...staticScan.coverage] };
+      const verified = [...staticScan.findings, ...dependencyScan.findings].slice(0, 12);
+      const result = { ...generated, findings: [...verified, ...generated.findings.slice(0, 20 - verified.length)], limitations: [...generated.limitations, ...staticScan.coverage, ...dependencyScan.coverage] };
       const { error: finishError } = await db.rpc('cloudops_finish_project_analysis', { p_user: userId, p_analysis: analysisId, p_result: result });
       dbError(finishError);
       return json({ success: true, analysisId });
