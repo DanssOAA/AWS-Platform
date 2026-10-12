@@ -170,4 +170,22 @@ describe('importación segura', () => {
     expect(fetcher.mock.calls[1][0]).toContain('feature%2Ftest');
     expect(fetcher.mock.calls.every(call => call[0].startsWith('https://api.github.com/'))).toBe(true);
   });
+  it('incluye package.json y el lockfile para disponer de versiones reproducibles', async () => {
+    const sha = 'b'.repeat(40);
+    const responses = [{ default_branch: 'main' }, { sha, commit: { tree: { sha } } }, {
+      tree: [
+        { type: 'blob', mode: '100644', path: 'src/app.ts', size: 30, sha },
+        { type: 'blob', mode: '100644', path: 'package.json', size: 30, sha },
+        { type: 'blob', mode: '100644', path: 'package-lock.json', size: 30, sha },
+      ],
+    },
+      { encoding: 'base64', content: Buffer.from('{"name":"app"}', 'utf8').toString('base64') },
+      { encoding: 'base64', content: Buffer.from('{"lockfileVersion":3}', 'utf8').toString('base64') },
+      { encoding: 'base64', content: Buffer.from('export const app = true;', 'utf8').toString('base64') },
+    ];
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify(responses.shift()))));
+    const result = await importSource({ kind: 'github', url: 'https://github.com/org/repo', repository_ref: null }, undefined, fetcher);
+    expect(result.coverage.files).toEqual(['package.json', 'package-lock.json', 'src/app.ts']);
+    expect(result.text).toContain('--- FILE: package-lock.json ---');
+  });
 });

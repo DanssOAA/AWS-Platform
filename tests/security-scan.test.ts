@@ -12,6 +12,12 @@ describe('escáner estático de seguridad', () => {
   it('no ejecuta contenido ni convierte texto normal en hallazgo', () => {
     expect(scanSecurity(source('describe la política de tokens y los puertos 22/3389, sin configuración.'))).toEqual([]);
   });
+  it('señala package.json sin lockfile importado y omite el aviso cuando existe uno', () => {
+    const withoutLock = scanSecurity(source('--- FILE: apps/web/package.json ---\n{"dependencies":{"react":"^19.0.0"}}'));
+    expect(withoutLock.map(f => f.rule_id)).toContain('DEP-NO-LOCKFILE');
+    const withLock = scanSecurity(source('--- FILE: apps/web/package.json ---\n{}\n--- FILE: apps/web/package-lock.json ---\n{}'));
+    expect(withLock.map(f => f.rule_id)).not.toContain('DEP-NO-LOCKFILE');
+  });
   it('declara explícitamente la cobertura y los límites del escáner', () => {
     const report = scanSecurityReport(source('const app = true;'));
     expect(report.findings).toEqual([]); expect(report.coverage.join(' ')).toMatch(/no ejecutó código.*CVE.*AWS desplegados/i);

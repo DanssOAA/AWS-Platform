@@ -51,8 +51,8 @@ async function githubJson(path: string, fetcher: typeof fetch) {
 }
 function usablePath(path: string) {
   return !/(^|\/)(node_modules|vendor|dist|build|\.git|coverage)(\/|$)/i.test(path)
-    && !/(^|\/)(\.env(?:\..*)?|.*\.(pem|key|p12|pfx)|.*lock.*|credentials.*)$/i.test(path)
-    && /(?:\.(md|txt|json|ya?ml|tf|ts|tsx|js|jsx|py|java|go|sql|cs|toml|xml|sh)|Dockerfile)$/i.test(path);
+    && !/(^|\/)(\.env(?:\..*)?|.*\.(pem|key|p12|pfx)|credentials.*)$/i.test(path)
+    && /(?:package-lock\.json|pnpm-lock\.yaml|yarn\.lock|(?:\.(md|txt|json|ya?ml|tf|ts|tsx|js|jsx|py|java|go|sql|cs|toml|xml|sh)|Dockerfile))$/i.test(path);
 }
 export async function importSource(source: Source, suppliedText: unknown, fetcher: typeof fetch = fetch): Promise<Imported> {
   const parsed = parseSource(source);
@@ -72,8 +72,11 @@ export async function importSource(source: Source, suppliedText: unknown, fetche
     if (!/^[a-f0-9]{40}$/.test(commit.sha) || !/^[a-f0-9]{40}$/.test(commit.commit?.tree?.sha)) throw new AnalysisError('GitHub no devolvió una revisión válida.', 502);
     const tree = await githubJson(root + '/git/trees/' + commit.commit.tree.sha + '?recursive=1', fetcher);
     if (!Array.isArray(tree.tree)) throw new AnalysisError('No se pudo leer el árbol de archivos.', 502);
-    const candidates = tree.tree.filter((f: any) => f.type === 'blob' && f.mode !== '120000' && typeof f.path === 'string' && usablePath(f.path) && f.size <= 12000);
-    const rank = (p: string) => /readme|requirements|package.json|dockerfile|\.tf$|\.ya?ml$/i.test(p) ? 0 : 1;
+    const dependencyFile = (p: string) => /(?:package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$/i.test(p);
+    const candidates = tree.tree.filter((f: any) => f.type === 'blob' && f.mode !== '120000' && typeof f.path === 'string' && usablePath(f.path) && f.size <= (dependencyFile(f.path) ? 48000 : 12000));
+    const rank = (p: string) => /(?:^|\/)package\.json$/i.test(p) ? 0
+      : /(?:^|\/)(?:package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$/i.test(p) ? 1
+      : /readme|requirements|dockerfile|\.tf$|\.ya?ml$/i.test(p) ? 2 : 3;
     candidates.sort((a: any, b: any) => rank(a.path) - rank(b.path) || a.path.localeCompare(b.path));
     const selected = candidates.slice(0, 12);
     const files: string[] = []; const skipped: string[] = []; let content = '';
