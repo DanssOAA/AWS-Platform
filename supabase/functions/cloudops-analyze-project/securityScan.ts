@@ -35,3 +35,9 @@ export function scanSecurityReport(versions: SourceVersion[]): SecurityScanRepor
   ] };
 }
 export function scanSecurity(versions: SourceVersion[]) { return scanSecurityReport(versions).findings; }
+export function verifiedSecurityPosture(findings: StaticSecurityFinding[]) {
+  const deductions = { high: 30, medium: 15, low: 5 } as const;
+  const score = Math.max(0, 100 - findings.reduce((total, finding) => total + deductions[finding.severity], 0));
+  const risk_level = findings.some(f => f.severity === 'high') ? 'high' : findings.some(f => f.severity === 'medium') ? 'medium' : findings.length ? 'low' : 'low';
+  return { security_score: score, risk_level, limitation: 'Puntuación basada únicamente en controles y dependencias verificados en las fuentes importadas; no representa una auditoría completa ni el estado de AWS desplegado.' };
+}

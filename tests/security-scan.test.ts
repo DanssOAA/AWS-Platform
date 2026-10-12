@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { scanSecurity, scanSecurityReport } from '../supabase/functions/cloudops-analyze-project/securityScan';
+import { scanSecurity, scanSecurityReport, verifiedSecurityPosture } from '../supabase/functions/cloudops-analyze-project/securityScan';
 const source = (text: string) => [{ id: '11111111-1111-4111-8111-111111111111', extracted_text: text, coverage: {}, resolved_revision: null }];
 describe('escáner estático de seguridad', () => {
   it('identifica patrones web e infraestructura y conserva evidencia localizada', () => {
@@ -23,5 +23,9 @@ describe('escáner estático de seguridad', () => {
   it('declara explícitamente la cobertura y los límites del escáner', () => {
     const report = scanSecurityReport(source('const app = true;'));
     expect(report.findings).toEqual([]); expect(report.coverage.join(' ')).toMatch(/no ejecutó código.*CVE.*AWS desplegados/i);
+  });
+  it('calcula una puntuación reproducible solo para los controles verificados', () => {
+    expect(verifiedSecurityPosture([])).toMatchObject({ security_score: 100, risk_level: 'low' });
+    expect(verifiedSecurityPosture(scanSecurity(source('acl = "public-read"')))).toMatchObject({ security_score: 70, risk_level: 'high' });
   });
 });

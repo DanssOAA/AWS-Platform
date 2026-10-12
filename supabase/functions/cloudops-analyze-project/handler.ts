@@ -4,7 +4,7 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2';
 import { AnalysisError, PROMPT_VERSION, UUID, generateAnalysis, sanitizeText, type SourceVersion } from './core.ts';
 import { boundedText, importSource } from './sources.ts';
 import { answerProjectQuestion } from './assistant.ts';
-import { scanSecurityReport } from './securityScan.ts';
+import { scanSecurityReport, verifiedSecurityPosture } from './securityScan.ts';
 import { scanNpmDependencies } from './dependencyScan.ts';
 
 function dbError(error: { message?: string } | null) {
@@ -104,7 +104,8 @@ export function createAnalysisHandler(options: {
       // Deterministic signals take precedence and are capped with the existing
       // transactional limit; Gemini findings remain clearly attributable.
       const verified = [...staticScan.findings, ...dependencyScan.findings].slice(0, 12);
-      const result = { ...generated, findings: [...verified, ...generated.findings.slice(0, 20 - verified.length)], limitations: [...generated.limitations, ...staticScan.coverage, ...dependencyScan.coverage] };
+      const posture = verifiedSecurityPosture(verified);
+      const result = { ...generated, ...posture, findings: [...verified, ...generated.findings.slice(0, 20 - verified.length)], limitations: [...generated.limitations, ...staticScan.coverage, ...dependencyScan.coverage, posture.limitation] };
       const { error: finishError } = await db.rpc('cloudops_finish_project_analysis', { p_user: userId, p_analysis: analysisId, p_result: result });
       dbError(finishError);
       return json({ success: true, analysisId });
