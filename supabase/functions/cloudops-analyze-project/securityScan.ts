@@ -6,6 +6,7 @@ export type StaticSecurityFinding = {
   detector: 'static'; scanner_version: string;
   aws_controls: { service: string; control: string }[];
 };
+export type SecurityScanReport = { findings: StaticSecurityFinding[]; coverage: string[] };
 
 type Rule = Omit<StaticSecurityFinding, 'source_version_id' | 'evidence_excerpt' | 'evidence_location' | 'detector' | 'scanner_version'> & { pattern: RegExp };
 const rules: Rule[] = [
@@ -16,7 +17,7 @@ const rules: Rule[] = [
 ];
 
 function lineAt(text: string, index: number) { return text.slice(0, index).split('\n').length; }
-export function scanSecurity(versions: SourceVersion[]): StaticSecurityFinding[] {
+export function scanSecurityReport(versions: SourceVersion[]): SecurityScanReport {
   const results: StaticSecurityFinding[] = [];
   for (const source of versions) for (const rule of rules) {
     const match = rule.pattern.exec(source.extracted_text);
@@ -25,5 +26,9 @@ export function scanSecurity(versions: SourceVersion[]): StaticSecurityFinding[]
     const excerpt = sanitizeText(source.extracted_text.split('\n')[line - 1].trim()).slice(0, 1000);
     results.push({ ...rule, detector: 'static', scanner_version: 'cloudops-static-v1', source_version_id: source.id, evidence_excerpt: excerpt || 'Patrón detectado en la fuente importada.', evidence_location: `Texto importado · línea ${line} · regla ${rule.rule_id}` });
   }
-  return results;
+  return { findings: results, coverage: [
+    'Escáner estático v1: revisó patrones de tokens en localStorage, HTML directo, puertos administrativos expuestos y buckets S3 públicos.',
+    `Cobertura del escáner: ${versions.length} fuente(s) importada(s); no ejecutó código, no escaneó CVE de dependencias ni recursos AWS desplegados.`,
+  ] };
 }
+export function scanSecurity(versions: SourceVersion[]) { return scanSecurityReport(versions).findings; }
